@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url  	    = env("DATABASE_URL")
+}
+
+model Usuario {
+  id               Int             @id @default(autoincrement())
+  username         String          @unique
+  nombres          String
+  apellidos        String
+  correo           String          @unique
+  contrasena       String
+  rol              Role            @default(EMPLEADO)
+  puesto           String
+  adscripcionId    Int
+  asistencias      Asistencia[]
+  cursosCreados    Curso[]         @relation("AdminCreador")
+  cursosImpartidos Curso[]         @relation("InstructorCurso")
+  inscripciones    CursoEmpleado[]
+  adscripcion      Adscripcion     @relation(fields: [adscripcionId], references: [id])
+}
+
+model Adscripcion {
+  id       Int                @id @default(autoincrement())
+  nombre   String             @unique
+  cursos   CursoAdscripcion[]
+  usuarios Usuario[]
+}
+
+model Curso {
+  id             Int                @id @default(autoincrement())
+  nombre         String
+  descripcion    String?
+  duracionHrs    Int
+  modalidad      Modalidad
+  fechaInicio    DateTime
+  fechaFin       DateTime
+  horaInicio     String
+  horaFin        String
+  tipo           CursoTipo
+  estado         CursoEstado        @default(POR_INSCRIBIR)
+  reconocimiento String?
+  creadorId      Int
+  instructorId   Int
+  asistencias    Asistencia[]
+  creador        Usuario            @relation("AdminCreador", fields: [creadorId], references: [id])
+  instructor     Usuario            @relation("InstructorCurso", fields: [instructorId], references: [id])
+  adscripciones  CursoAdscripcion[]
+  empleados      CursoEmpleado[]
+}
+
+model Asistencia {
+  id        Int              @id @default(autoincrement())
+  estado    AsistenciaEstado
+  fecha     DateTime         @default(now())
+  cursoId   Int
+  usuarioId Int
+  curso     Curso            @relation(fields: [cursoId], references: [id])
+  usuario   Usuario          @relation(fields: [usuarioId], references: [id])
+}
+
+model CursoAdscripcion {
+  id            Int         @id @default(autoincrement())
+  adscripcionId Int
+  cursoId       Int
+  adscripcion   Adscripcion @relation(fields: [adscripcionId], references: [id])
+  curso         Curso       @relation(fields: [cursoId], references: [id])
+}
+
+model CursoEmpleado {
+  id           Int              @id @default(autoincrement())
+  fechaSubida  DateTime         @default(now())
+  estado       ValidacionEstado @default(POR_VALIDAR)
+  calificacion Calificacion?
+  constancia   String?
+  cursoId      Int
+  usuarioId    Int
+  curso        Curso            @relation(fields: [cursoId], references: [id])
+  usuario      Usuario          @relation(fields: [usuarioId], references: [id])
+  @@unique([cursoId, usuarioId])
+}
+
+enum Role {
+  ADMIN
+  EMPLEADO
+  INSTRUCTOR
+}
+
+enum Modalidad {
+  ONLINE
+  PRESENCIAL
+}
+
+enum CursoTipo {
+  INTERNO
+  EXTERNO
+}
+
+enum CursoEstado {
+  POR_INSCRIBIR
+  EN_CURSO
+  FINALIZADO
+}
+
+enum AsistenciaEstado {
+  ASISTENCIA
+  FALTA
+  JUSTIFICADA
+}
+
+enum ValidacionEstado {
+  POR_VALIDAR
+  VALIDADO
+}
+
+enum Calificacion {
+  APROBADO
+  REPROBADO
+}
