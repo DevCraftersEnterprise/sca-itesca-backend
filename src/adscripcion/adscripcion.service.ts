@@ -7,7 +7,7 @@ import { UpdateAdscripcionDto } from './dto/update-adscripcion.dto';
 export class AdscripcionService {
   constructor(private prisma: PrismaService) {}
 
-  // 1. Crear (Resuelve el error de la línea 12)
+  // 1. Crear adscripción (Resuelve el error de la línea 17)
   async create(createAdscripcionDto: CreateAdscripcionDto) {
     return this.prisma.adscripcion.create({
       data: createAdscripcionDto,

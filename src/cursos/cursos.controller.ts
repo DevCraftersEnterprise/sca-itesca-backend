@@ -16,23 +16,25 @@ export class CursosController {
     private readonly cursosService: CursosService,
     private readonly cloudinaryService: CloudinaryService
   ) {}
-
+  // 1. Crear curso (Solo ADMIN)
   @Post()
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   create(@Body() createCursoDto: CreateCursoDto, @Req() req: any) {
-    // Extraemos el ID del admin desde el request (puesto ahí por el JwtStrategy)
     const adminId = req.user.id;
     return this.cursosService.create(createCursoDto, adminId);
   }
-
+  // 2. Listar todos los cursos (Solo ADMIN)
   @Get()
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   findAll() {
     return this.cursosService.findAll();
   }
-
+  // 3. Inscribirse a un curso (Solo EMPLEADO)
   @Post('inscribir')
-  @UseGuards(AuthGuard('jwt')) // Protegemos la ruta
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard) // Protegemos la ruta
   async inscribir(
     @Body('cursoId') cursoId: number, 
     @Req() req: any // 'req.user' contendrá los datos del JWT
@@ -40,61 +42,62 @@ export class CursosController {
     const usuarioId = req.user.id;
     return this.cursosService.inscribir(cursoId, usuarioId);
   }
-
+  // 4. Ver mis inscripciones (Solo EMPLEADO)
   @Get('mis-inscripciones')
-  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.EMPLEADO)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async misInscripciones(@Req() req: any) {
-    // Aquí no pasamos un ID por la URL, usamos el del Token
     const usuarioId = req.user.id; 
-    
     if (!usuarioId) {
        throw new UnauthorizedException('No se encontró el ID del usuario en el token');
     }
 
     return this.cursosService.obtenerMisInscripciones(usuarioId);
   }
-
+  // 5. Listar cursos disponibles para inscribirse (Solo EMPLEADO)
   @Get('disponibles')
+  @Roles(Role.EMPLEADO)
   @UseGuards(AuthGuard('jwt'))
   async listarDisponibles(@Req() req: any) {
     return this.cursosService.listarDisponibles(req.user.id);
   }
-
+  // 6. Listar cursos que imparto (Solo INSTRUCTOR)
   @Get('mis-cursos')
+  @Roles(Role.INSTRUCTOR)
   @UseGuards(AuthGuard('jwt'))
   async listarMisCursos(@Req() req: any) {
     return this.cursosService.listarMisCursos(req.user.id);
   }
 
-  // 1. Ver solo los cursos que ya están validados (su "Kardex")
+  // 7. Ver detalle de un curso al que estoy inscrito (Solo EMPLEADO)
   @Get('mis-constancias')
   @UseGuards(AuthGuard('jwt'))
   async verMisConstancias(@Req() req: any) {
     return this.cursosService.obtenerMisConstancias(req.user.id);
   }
-
+  // 8. Listar mis inscripciones activas (Solo EMPLEADO)
   @Get('mis-inscripciones-activas')
   @UseGuards(AuthGuard('jwt'))
   async listarMisInscripciones(@Req() req: any) {
     return this.cursosService.listarMisInscripciones(req.user.id);
   }
-
+  // 9. Ver detalle de un curso al que estoy inscrito (Solo EMPLEADO)
   @Get('mi-curso/:id')
   @UseGuards(AuthGuard('jwt'))
   async verDetalleCurso(@Param('id') id: string, @Req() req: any) {
     return this.cursosService.verDetalleCurso(+id, req.user.id);
   }
-  
+  // 10. Ver detalle de un curso (Solo ADMIN)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.cursosService.findOne(+id);
   }
-
+  // 11. Actualizar curso (Solo ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
     return this.cursosService.update(+id, updateCursoDto);
   }
-
+  // 12. Subir constancia de un curso (Solo EMPLEADO)
   @Patch('subir-constancia/:id')
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('archivo')) 
@@ -105,20 +108,7 @@ export class CursosController {
   ) {
     // 1. Subimos a Cloudinary primero
     const urlCloudinary = await this.cloudinaryService.uploadFile(file);
-    
     // 2. Guardamos esa URL en la base de datos
     return this.cursosService.actualizarConstancia(+id, req.user.id, urlCloudinary);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cursosService.remove(+id);
-  }
-
-  // 2. Darse de baja de un curso
-  @Delete('cancelar-inscripcion/:id')
-  @UseGuards(AuthGuard('jwt'))
-  async cancelar(@Param('id') id: string, @Req() req: any) {
-    return this.cursosService.cancelarInscripcion(+id, req.user.id);
   }
 }

@@ -12,7 +12,7 @@ export class CursosService {
     return this.prisma.curso.create({
       data: {
         ...cursoData,
-        creadorId: creadorId, // Se asigna el ID del admin que hizo la petición
+        creadorId: creadorId,
         adscripciones: {
           create: adscripcionesIds?.map((id) => ({
             adscripcionId: id,

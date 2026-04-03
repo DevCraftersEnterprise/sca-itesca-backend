@@ -27,6 +27,7 @@ model Usuario {
 model Adscripcion {
   id       Int                @id @default(autoincrement())
   nombre   String             @unique
+  clave    String             @unique
   cursos   CursoAdscripcion[]
   usuarios Usuario[]
 }

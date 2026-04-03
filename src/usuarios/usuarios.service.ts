@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import * as bcrypt from 'bcrypt';
-
+import { Role } from '@prisma/client';
 @Injectable()
 export class UsuariosService {
   constructor(private prisma: PrismaService) {}
@@ -15,7 +15,6 @@ export class UsuariosService {
 
     return this.prisma.usuario.create({
       data: {
-
         ...dto,
         contrasena: hashed,
       },
@@ -24,6 +23,7 @@ export class UsuariosService {
 
   // TRAER TODOS: Incluimos la adscripción para ver el nombre del departamento
   findAll() {
+    
     return this.prisma.usuario.findMany({
       include: { adscripcion: true },
     });
@@ -62,10 +62,18 @@ export class UsuariosService {
     });
   }
 
-  // ELIMINAR
-  remove(id: number) {
-    return this.prisma.usuario.delete({
-      where: { id },
+  //Traer por adscripción
+  findByAdscripcion(adscripcionId: number) {
+    return this.prisma.usuario.findMany({
+      where: { adscripcionId },
+      include: { adscripcion: true },
+    });
+  }
+  //traer por rol
+  findByRol(rol: Role) {
+    return this.prisma.usuario.findMany({
+      where: { rol },
+      include: { adscripcion: true },
     });
   }
 }
