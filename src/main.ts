@@ -7,6 +7,7 @@ async function bootstrap() {
     origin: '*', // Permite cualquier origen (incluyendo el localhost de tu compa)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
+    allowedHeaders: 'Content-Type, Authorization',
   });
 
   // 2. Usar el puerto que asigne Render o el 3000 por defecto
