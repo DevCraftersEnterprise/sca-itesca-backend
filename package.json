@@ -26,6 +26,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.6",
     "@prisma/client": "^6.19.3",
     "@prisma/config": "^7.6.0",
     "bcrypt": "^6.0.0",
