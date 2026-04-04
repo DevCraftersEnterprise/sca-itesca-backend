@@ -26,6 +26,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       user: {
+        id:usuario.id,
         username: usuario.username,
         rol: usuario.rol,
         adscripcion: usuario.adscripcion ? usuario.adscripcion.clave : null,
@@ -33,7 +34,7 @@ export class AuthService {
         apellidos: usuario.apellidos,
         correo: usuario.correo,
         puesto: usuario.puesto,
-        
+
       }
     };
   }
