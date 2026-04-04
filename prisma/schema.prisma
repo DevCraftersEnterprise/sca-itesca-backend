@@ -43,13 +43,14 @@ model Curso {
   horaInicio     String
   horaFin        String
   tipo           CursoTipo
+  aula           String             @default("si")
   estado         CursoEstado        @default(POR_INSCRIBIR)
   reconocimiento String?
   creadorId      Int
-  instructorId   Int
+  instructorId   Int?
   asistencias    Asistencia[]
   creador        Usuario            @relation("AdminCreador", fields: [creadorId], references: [id])
-  instructor     Usuario            @relation("InstructorCurso", fields: [instructorId], references: [id])
+  instructor     Usuario?            @relation("InstructorCurso", fields: [instructorId], references: [id])
   adscripciones  CursoAdscripcion[]
   empleados      CursoEmpleado[]
 }

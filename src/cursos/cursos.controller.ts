@@ -9,7 +9,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
 import { CloudinaryService } from '../common/cloudinary/cloudinary.service'; // Ajusta la ruta si es necesario
-
+import 'multer';
 @Controller('cursos')
 export class CursosController {
   constructor(

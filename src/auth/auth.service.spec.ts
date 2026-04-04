@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
-import { beforeEach, describe, it } from 'node:test';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -17,3 +16,4 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 });
+
