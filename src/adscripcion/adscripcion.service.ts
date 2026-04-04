@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAdscripcionDto } from './dto/create-adscripcion.dto';
 import { UpdateAdscripcionDto } from './dto/update-adscripcion.dto';
@@ -19,10 +19,19 @@ export class AdscripcionService {
     return this.prisma.adscripcion.findMany();
   }
 
+  async findOne(id: number) {
+    const adscripcion = await this.prisma.adscripcion.findUnique({
+      where: { id },
+      include: { usuarios: true } // Por si necesitas ver quiénes pertenecen a ella
+    });
+    
+    if (!adscripcion) throw new NotFoundException(`Adscripción con ID ${id} no encontrada`);
+    return adscripcion;
+  }
   // 3. Traer uno solo (Resuelve el error de la línea 22)
-  async findOne(nombre: string) {
-    return this.prisma.adscripcion.findFirst({
-      where: { nombre },
+  async findByClave(clave: string) {
+    return this.prisma.adscripcion.findUnique({
+      where: { clave },
     });
   }
 
