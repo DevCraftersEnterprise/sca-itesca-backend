@@ -17,15 +17,11 @@ export class AdscripcionController {
     return this.adscripcionService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.adscripcionService.findOne(+id);
+  @Get(':nombre')
+  findOne(@Param('nombre') nombre: string) {
+    return this.adscripcionService.findOne(nombre);
   }
-  @Get('clave/:clave')
-  findByClave(@Param('clave') clave: string) {
-    return this.adscripcionService.findByClave(clave);
-  }
-  
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAdscripcionDto: UpdateAdscripcionDto) {
     return this.adscripcionService.update(+id, updateAdscripcionDto);
