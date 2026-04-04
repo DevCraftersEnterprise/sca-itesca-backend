@@ -34,7 +34,7 @@ export class AuthService {
         apellidos: usuario.apellidos,
         correo: usuario.correo,
         puesto: usuario.puesto,
-        
+
       }
     };
   }

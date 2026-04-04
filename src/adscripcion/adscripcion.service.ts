@@ -21,7 +21,7 @@ export class AdscripcionService {
 
   // 3. Traer uno solo (Resuelve el error de la línea 22)
   async findOne(nombre: string) {
-    return this.prisma.adscripcion.findUnique({
+    return this.prisma.adscripcion.findFirst({
       where: { nombre },
     });
   }
