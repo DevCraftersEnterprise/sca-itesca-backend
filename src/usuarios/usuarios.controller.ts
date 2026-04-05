@@ -35,6 +35,11 @@ export class UsuariosController {
     // El ID viene del Token JWT
     return this.usuariosService.getCursosPorUsuario(req.user.id);
   }
+  @Patch('update-password')
+  @UseGuards(AuthGuard('jwt'))
+  updatePassword(@Request() req, @Body('newPassword') newPassword: string) {
+    return this.usuariosService.updatePassword(req.user.id, newPassword);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

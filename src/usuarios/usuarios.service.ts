@@ -84,7 +84,6 @@ export class UsuariosService {
           }
       });
     }
-
     // --- CASO 2: INSTRUCTOR ---
     if (usuario.rol === Role.INSTRUCTOR) {
       return this.prisma.curso.findMany({
@@ -102,7 +101,6 @@ export class UsuariosService {
         }
       });
     }
-
     // --- CASO 3, 4 y 5: EMPLEADO ---
     if (usuario.rol === Role.EMPLEADO) {
       return {
@@ -162,6 +160,15 @@ export class UsuariosService {
     return this.prisma.usuario.findMany({
       where: { adscripcionId },
       include: { adscripcion: true },
+    });
+  }
+  //Update password
+  async updatePassword(id: number, newPassword: string) {
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(newPassword, salt);
+    return this.prisma.usuario.update({
+      where: { id },
+      data: { contrasena: hashed },
     });
   }
   //traer por rol
