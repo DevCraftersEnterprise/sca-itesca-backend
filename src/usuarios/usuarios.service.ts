@@ -68,9 +68,8 @@ export class UsuariosService {
     if (!usuario) throw new NotFoundException(`Usuario con ID ${userId} no existe`);
 
     const anioActual = new Date().getFullYear();
-    const inicioAnio = new Date(anioActual, 0, 1);
-    const finAnio = new Date(anioActual, 11, 31);
-
+    const inicioAnio = new Date(`${anioActual}-01-01T00:00:00.000Z`);
+    const finAnio = new Date(`${anioActual}-12-31T23:59:59.999Z`);
     // --- CASO 1: ADMIN (Todos los cursos) ---
     if (usuario.rol === Role.ADMIN) {
       return this.prisma.curso.findMany({
@@ -117,7 +116,7 @@ export class UsuariosService {
         historialAnual: await this.prisma.curso.findMany({
           where: {
             empleados: { some: { usuarioId: usuario.id } },
-            fechaInicio: { gte: inicioAnio, lte: finAnio }
+            fechaFin: { gte: inicioAnio, lte: finAnio }
           }
         })
       };
