@@ -37,8 +37,10 @@ export class UsuariosController {
   }
   @Patch('update-password')
   @UseGuards(AuthGuard('jwt'))
-  updatePassword(@Request() req, @Body('newPassword') newPassword: string) {
-    return this.usuariosService.updatePassword(req.user.id, newPassword);
+  updatePassword(
+    @Request() req,
+   @Body() data: { passActual: string; newPassword: string }) {
+    return this.usuariosService.updatePassword(req.user.id, data.passActual, data.newPassword);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -163,7 +163,13 @@ export class UsuariosService {
     });
   }
   //Update password
-  async updatePassword(id: number, newPassword: string) {
+  async updatePassword(id: number, passActual: string, newPassword: string) {
+    const usuario = await this.prisma.usuario.findUnique({ where: { id } });
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+    const isMatch = await bcrypt.compare(passActual, usuario.contrasena);
+    if (!isMatch) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(newPassword, salt);
     return this.prisma.usuario.update({
