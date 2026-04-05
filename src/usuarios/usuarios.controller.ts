@@ -1,4 +1,4 @@
-import { Controller, UseGuards, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, UseGuards, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Request } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -27,6 +27,13 @@ export class UsuariosController {
   @ApiResponse({ status: 200, description: 'Lista de usuarios devuelta correctamente.' })
   findAll() {
     return this.usuariosService.findAll();
+  }
+
+  @Get('mis-cursos')
+  @UseGuards(AuthGuard('jwt'))
+  async getMisCursos(@Request() req) {
+    // El ID viene del Token JWT
+    return this.usuariosService.getCursosPorUsuario(req.user.id);
   }
 
   @Get(':id')

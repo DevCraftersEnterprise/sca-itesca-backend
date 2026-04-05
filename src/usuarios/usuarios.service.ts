@@ -7,7 +7,7 @@ import { Role } from '@prisma/client';
 @Injectable()
 export class UsuariosService {
   constructor(private prisma: PrismaService) {}
-
+  
   // CREAR: Con encriptación de contraseña
   async create(dto: CreateUsuarioDto) {
     const salt = await bcrypt.genSalt(10);
@@ -20,10 +20,8 @@ export class UsuariosService {
       },
     });
   }
-
   // TRAER TODOS: Incluimos la adscripción para ver el nombre del departamento
   findAll() {
-    
     return this.prisma.usuario.findMany({
       include: { adscripcion: true },
     });
@@ -45,7 +43,6 @@ export class UsuariosService {
     if (!usuario) throw new NotFoundException(`Usuario con ID ${id} no existe`);
     return usuario;
   }
-
   // ACTUALIZAR: Manejando la contraseña opcional
   async update(id: number, dto: UpdateUsuarioDto) {
     const data = { ...dto };
@@ -61,7 +58,71 @@ export class UsuariosService {
       data,
     });
   }
+  // OBTIENE CURSOS RELACIONADOS AL USUARIO SEGÚN SU ROL
+  async getCursosPorUsuario(userId: number) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: { rol: true, id: true },
+    });
 
+    if (!usuario) throw new NotFoundException(`Usuario con ID ${userId} no existe`);
+
+    const anioActual = new Date().getFullYear();
+    const inicioAnio = new Date(anioActual, 0, 1);
+    const finAnio = new Date(anioActual, 11, 31);
+
+    // --- CASO 1: ADMIN (Todos los cursos) ---
+    if (usuario.rol === Role.ADMIN) {
+      return this.prisma.curso.findMany({
+        include: { instructor: true, creador: true }
+      });
+    }
+
+    // --- CASO 2: INSTRUCTOR ---
+    if (usuario.rol === Role.INSTRUCTOR) {
+      return this.prisma.curso.findMany({
+        where: {
+          instructorId: usuario.id,
+          OR: [
+            { estado: { in: ['POR_INSCRIBIR', 'EN_CURSO'] } }, // Cursos que va a impartir / impartiendo
+            { 
+              fechaFin: { gte: inicioAnio, lte: finAnio }, // Impartidos este año
+              estado: 'FINALIZADO' 
+            }
+          ]
+        }
+      });
+    }
+
+    // --- CASO 3, 4 y 5: EMPLEADO ---
+    if (usuario.rol === Role.EMPLEADO) {
+      return {
+        // 3. Cursos a los que está inscrito (Relación CursoEmpleado)
+        inscritos: await this.prisma.curso.findMany({
+          where: {
+            empleados: { some: { usuarioId: usuario.id } },
+            estado: { in: ['EN_CURSO', 'POR_INSCRIBIR', 'FINALIZADO'] }
+          }
+        }),
+
+        // 4. Cursos disponibles por inscribir
+        disponibles: await this.prisma.curso.findMany({
+          where: {
+            estado: 'POR_INSCRIBIR',
+            empleados: { none: { usuarioId: usuario.id } } // Que no esté ya inscrito
+          }
+        }),
+
+        // 5. Historial (Llevó o está llevando en el año actual)
+        historialAnual: await this.prisma.curso.findMany({
+          where: {
+            empleados: { some: { usuarioId: usuario.id } },
+            fechaInicio: { gte: inicioAnio, lte: finAnio }
+          }
+        })
+      };
+    }
+  }
   //Traer por adscripción
   findByAdscripcion(adscripcionId: number) {
     return this.prisma.usuario.findMany({
