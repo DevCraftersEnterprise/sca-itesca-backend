@@ -112,7 +112,7 @@ export class UsuariosService {
             estado: 'POR_INSCRIBIR',
             empleados: { none: { usuarioId: usuario.id } } // Que no esté ya inscrito
           },
-          include: { instructor: true }
+          include: { instructor: true, adscripciones: true }
         }),
 
         // 5. Historial (Llevó o está llevando en el año actual)
@@ -121,7 +121,7 @@ export class UsuariosService {
             empleados: { some: { usuarioId: usuario.id } },
             fechaFin: { gte: inicioAnio, lte: finAnio }
           },
-          include: { instructor: true }
+          include: { instructor: true, adscripciones: true }
         })
       };
     }
