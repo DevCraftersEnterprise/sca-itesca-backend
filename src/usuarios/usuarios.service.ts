@@ -73,7 +73,15 @@ export class UsuariosService {
     // --- CASO 1: ADMIN (Todos los cursos) ---
     if (usuario.rol === Role.ADMIN) {
       return this.prisma.curso.findMany({
-        include: { instructor: true, creador: true }
+        include: { 
+          instructor: true, 
+          creador: true,
+          adscripciones: {
+              include: {
+                adscripcion: true
+              }
+             } 
+         }
       });
     }
 
@@ -82,15 +90,16 @@ export class UsuariosService {
       return this.prisma.curso.findMany({
         where: {
           instructorId: usuario.id,
-          OR: [
-            { estado: { in: ['POR_INSCRIBIR', 'EN_CURSO'] } }, // Cursos que va a impartir / impartiendo
-            { 
-              fechaFin: { gte: inicioAnio, lte: finAnio }, // Impartidos este año
-              estado: 'FINALIZADO' 
-            }
-          ]
+          estado: { in: ['EN_CURSO', 'POR_INSCRIBIR', 'FINALIZADO'] }
         },
-        include: { instructor: true }
+        include: { 
+          instructor: true,
+          adscripciones: {
+              include: {
+                adscripcion: true
+              }
+             } 
+         }
       });
     }
 
@@ -103,7 +112,14 @@ export class UsuariosService {
             empleados: { some: { usuarioId: usuario.id } },
             estado: { in: ['EN_CURSO', 'POR_INSCRIBIR', 'FINALIZADO'] }
           },
-          include: { instructor: true }
+          include: { 
+            instructor: true,
+            adscripciones: {
+              include: {
+                adscripcion: true
+              }
+             } 
+           }
         }),
 
         // 4. Cursos disponibles por inscribir
@@ -112,7 +128,14 @@ export class UsuariosService {
             estado: 'POR_INSCRIBIR',
             empleados: { none: { usuarioId: usuario.id } } // Que no esté ya inscrito
           },
-          include: { instructor: true, adscripciones: true }
+          include: { 
+            instructor: true,
+             adscripciones: {
+              include: {
+                adscripcion: true
+              }
+             } 
+            }
         }),
 
         // 5. Historial (Llevó o está llevando en el año actual)
@@ -121,7 +144,13 @@ export class UsuariosService {
             empleados: { some: { usuarioId: usuario.id } },
             fechaFin: { gte: inicioAnio, lte: finAnio }
           },
-          include: { instructor: true, adscripciones: true }
+          include: { instructor: true, 
+            adscripciones: {
+              include: {
+                adscripcion: true
+              }
+             } 
+            }
         })
       };
     }
