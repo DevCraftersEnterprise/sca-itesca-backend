@@ -80,8 +80,8 @@ export class UsuariosService {
               include: {
                 adscripcion: true
               }
-             } 
-         }
+            } 
+          }
       });
     }
 
@@ -95,11 +95,11 @@ export class UsuariosService {
         include: { 
           instructor: true,
           adscripciones: {
-              include: {
-                adscripcion: true
-              }
-             } 
-         }
+            include: {
+              adscripcion: true
+            }
+          } 
+        }
       });
     }
 
@@ -118,15 +118,16 @@ export class UsuariosService {
               include: {
                 adscripcion: true
               }
-             } 
-           }
+            } 
+          }
         }),
 
         // 4. Cursos disponibles por inscribir
         disponibles: await this.prisma.curso.findMany({
           where: {
             estado: 'POR_INSCRIBIR',
-            empleados: { none: { usuarioId: usuario.id } } // Que no esté ya inscrito
+            tipo: 'INTERNO',
+            empleados: { none: { usuarioId: usuario.id } }
           },
           include: { 
             instructor: true,
@@ -134,8 +135,8 @@ export class UsuariosService {
               include: {
                 adscripcion: true
               }
-             } 
-            }
+            } 
+          }
         }),
 
         // 5. Historial (Llevó o está llevando en el año actual)
@@ -144,13 +145,14 @@ export class UsuariosService {
             empleados: { some: { usuarioId: usuario.id } },
             fechaFin: { gte: inicioAnio, lte: finAnio }
           },
-          include: { instructor: true, 
+          include: { 
+            instructor: true, 
             adscripciones: {
               include: {
                 adscripcion: true
               }
-             } 
-            }
+            } 
+          }
         })
       };
     }

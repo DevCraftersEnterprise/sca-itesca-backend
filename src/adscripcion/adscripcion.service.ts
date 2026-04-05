@@ -16,7 +16,9 @@ export class AdscripcionService {
 
   // 2. Traer todos
   async findAll() {
-    return this.prisma.adscripcion.findMany();
+    return await this.prisma.adscripcion.findMany({
+      include: { usuarios: true, },
+    });
   }
 
   // 3. Traer uno solo (Resuelve el error de la línea 22)
