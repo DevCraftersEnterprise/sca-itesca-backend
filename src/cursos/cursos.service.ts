@@ -43,9 +43,12 @@ export class CursosService {
               include: {
                 adscripcion: true 
               }
-            } 
+            }
           }
-        }
+        },
+        asistencias: {
+          include: { usuario: true }
+        },
       }
     });
     if (!curso) throw new NotFoundException('Curso no encontrado');
