@@ -37,7 +37,15 @@ export class CursosService {
         instructor: true,
         adscripciones: { include: { adscripcion: true } },
         // Traemos a los empleados inscritos para la vista de "Ver curso"
-        empleados: {include: { usuario: true }}
+        empleados: {
+          include: { 
+            usuario: {
+              include: {
+                adscripcion: true 
+              }
+            } 
+          }
+        }
       }
     });
     if (!curso) throw new NotFoundException('Curso no encontrado');
