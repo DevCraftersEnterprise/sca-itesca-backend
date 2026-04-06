@@ -13,24 +13,6 @@ export class InstructoresService {
               private cloudinaryService: CloudinaryService
   ) {}
 
-  // 1. Ver Perfil del Instructor
-  async verPerfil(id: number) {
-    return this.prisma.usuario.findUnique({
-      where: { id },
-      select: { nombres: true, correo: true, adscripcion: true, rol: true }
-    });
-  }
-
-  // 2. Listar cursos impartidos con filtros (Estado e Interno/Externo)
-  async listarCursosImpartidos(instructorId: number, filtros: { estado?: any, tipo?: any }) {
-    return this.prisma.curso.findMany({
-      where: {
-        instructorId: instructorId,
-        ...(filtros.estado && { estado: filtros.estado }),
-        ...(filtros.tipo && { tipo: filtros.tipo }),
-      }
-    });
-  }
 
   // 2. Registrar asistencia del DÍA ACTUAL (o cualquier fecha)
   // Este método es un "Upsert": si ya existe, lo cambia; si no, lo crea.
@@ -80,44 +62,7 @@ export class InstructoresService {
       }
     });
   }
-  // 3. VER DETALLE: Combina empleados, asistencias marcadas y estatus de PDF
-  async verDetalleCurso(cursoId: number) {
-    const curso = await this.prisma.curso.findUnique({
-      where: { id: cursoId },
-      include: {
-        empleados: {
-          include: {
-            usuario: {
-              select: { 
-                id: true, 
-                nombres: true, 
-                asistencias: { 
-                  where: { cursoId: cursoId },
-                  orderBy: { fecha: 'asc' }
-                } 
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!curso) throw new NotFoundException('Curso no encontrado');
-
-    return {
-      ...curso,
-      // Mapeamos los empleados para incluir la lógica de la constancia
-      empleados: curso.empleados.map(emp => ({
-        id: emp.usuario.id,
-        nombre: emp.usuario.nombres,
-        calificacion: emp.calificacion, // "APROBADO" o "REPROBADO"
-        estado: emp.estado,
-        asistencias: emp.usuario.asistencias,
-        // Solo enviamos el link si el estado es VALIDADO
-        pdfConstancia: emp.estado === 'VALIDADO' ? emp.constancia : null
-      }))
-    };
-  }
+  
   // 1. Complemento para ver el reconocimiento del instructor
   async verReconocimientoInstructor(cursoId: number, instructorId: number) {
     const curso = await this.prisma.curso.findFirst({
@@ -212,7 +157,7 @@ export class InstructoresService {
         // 6. Finalmente, enviamos la URL como respuesta o redirigimos
         return res.status(201).json({ url: urlCloudinary });
         
-      } catch (error) {
+      } catch (error : any) {
         console.error("DETALLE DEL ERROR DE CLOUDINARY:", error); // <--- ESTO ES CLAVE
         return res.status(500).json({ 
           message: 'Error al subir a Cloudinary', 
@@ -245,7 +190,7 @@ export class InstructoresService {
 
       // Logo Institución
       doc.image(join(rutaAssets, 'logo.png'), (pageWidth - mm(80)) / 2, mm(12), { width: mm(80), height: mm(25) });
-    } catch (err) {
+    } catch (err : any) {
       console.error("Error en assets:", err.message);
     }
 

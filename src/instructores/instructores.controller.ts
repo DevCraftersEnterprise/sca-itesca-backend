@@ -8,22 +8,6 @@ import express from 'express';
 export class InstructoresController {
   constructor(private readonly instructoresService: InstructoresService) {}
 
-  // Listar mis cursos con filtros: /instructores/mis-cursos?estado=EN_CURSO&tipo=INTERNO
-  @Get('mis-cursos')
-  async misCursos(
-    @Req() req: any,
-    @Query('estado') estado: string,
-    @Query('tipo') tipo: string
-  ) {
-    return this.instructoresService.listarCursosImpartidos(req.user.id, { estado, tipo });
-  }
-
-  // Al entrar al curso, el Instructor llama a esto:
-  @Get('curso/:id/asistencias')
-  async obtenerTodo(@Param('id') id: string) {
-    return this.instructoresService.verDetalleCurso(+id);
-  }
-
   // Cuando el Instructor da clic en "Presente" o "Ausente" hoy:
   @Post('asistencia-hoy')
   async marcarHoy(
@@ -45,14 +29,6 @@ export class InstructoresController {
   ) {
     return this.instructoresService.asignarCalificacion(data.cursoId, data.usuarioId, data.calificacion);
   }
-
-  // Get para que el instructor vea la lista y los botones de PDF
-  @Get('curso/:id')
-  async detalle(@Param('id') id: string) {
-    return this.instructoresService.verDetalleCurso(+id);
-  }
-
-  // src/instructores/instructores.controller.ts
 
   // 1. Ver el reconocimiento/diploma del propio instructor
   @Get('curso/:id/mi-reconocimiento')

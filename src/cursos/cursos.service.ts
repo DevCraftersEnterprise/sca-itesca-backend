@@ -30,19 +30,29 @@ export class CursosService {
     });
   }
 
-  async findAll() {
-    return this.prisma.curso.findMany({
+  async findOne(id: number) {
+    const curso = await this.prisma.curso.findUnique({
+      where: { id },
       include: {
         instructor: true,
-        creador: { select: { username: true } },
-        adscripciones: true
+        adscripciones: { include: { adscripcion: true } },
+        // Traemos a los empleados inscritos para la vista de "Ver curso"
+        empleados: {include: { usuario: true }}
       }
     });
+    if (!curso) throw new NotFoundException('Curso no encontrado');
+    return curso;
   }
-  findOne(id: number) {
-    return `This action returns a #${id} curso`;
+  async findAsistencias(id: number) {
+    // Solo traemos la lista de alumnos y sus asistencias registradas
+    return this.prisma.asistencia.findMany({
+      where: { cursoId: id },
+      include: {
+        usuario: true // Para saber el nombre del alumno
+      },
+      orderBy: { fecha: 'desc' }
+    });
   }
-
   async update(id: number, dto: UpdateCursoDto) {
     const { adscripcionesIds, ...cursoData } = dto;
 
@@ -96,54 +106,6 @@ export class CursosService {
     });
   }
 
-  async obtenerMisInscripciones(usuarioId: number) {
-    return this.prisma.cursoEmpleado.findMany({
-      where: { usuarioId: usuarioId },
-      include: {
-        curso: true, // Traemos la info del curso (nombre, fecha, etc.)
-      },
-    });
-  }
-
-  async listarDisponibles(usuarioId: number) {
-    return this.prisma.curso.findMany({
-      where: {
-        empleados: {
-          none: { usuarioId: usuarioId }
-        },
-        estado: 'POR_INSCRIBIR' // Solo los que están abiertos
-      }
-    });
-  }
-
-  // Cursos donde el usuario ya tiene un registro
-  async listarMisCursos(usuarioId: number) {
-    return this.prisma.cursoEmpleado.findMany({
-      where: { usuarioId },
-      include: { 
-        curso: true // Incluye nombre, fechas, tipo (INTERNO/EXTERNO)
-      }
-    });
-  }
-  // Ver detalle interno: Estado, Calificación y Constancia
-  async verDetalleCurso(inscripcionId: number, usuarioId: number) {
-    const detalle = await this.prisma.cursoEmpleado.findFirst({
-      where: { id: inscripcionId, usuarioId },
-      include: { curso: true }
-    });
-
-    if (!detalle) throw new NotFoundException('Inscripción no encontrada');
-
-    // Lógica: Solo mostramos la constancia si el estado es VALIDADO/APROBADO
-    return {
-      nombreCurso: detalle.curso.nombre,
-      estado: detalle.estado,
-      calificacion: detalle.calificacion,
-      constancia: detalle.estado === 'VALIDADO' ? detalle.constancia : null,
-      tipo: detalle.curso.tipo
-    };
-  }
-
   // Subir el PDF para que el Admin lo valide después
   async subirConstancia(inscripcionId: number, usuarioId: number, pdfUrl: string) {
     return this.prisma.cursoEmpleado.update({
@@ -179,63 +141,4 @@ export class CursosService {
     });
   }
 
-  async listarMisInscripciones(usuarioId: number) {
-    return this.prisma.cursoEmpleado.findMany({
-      where: { 
-        usuarioId: usuarioId 
-      },
-      include: {
-        curso: {
-          select: {
-            id: true,
-            nombre: true,
-            fechaInicio: true,
-            fechaFin: true,
-            modalidad: true,
-            tipo: true, // Aquí verás si es INTERNO o EXTERNO
-            estado: true // Estado del curso (ej. EN_CURSO, FINALIZADO)
-          }
-        }
-      },
-      orderBy: {
-        fechaSubida: 'desc' // Los más recientes primero
-      }
-    });
-  }
-  
-  async obtenerMisConstancias(usuarioId: number) {
-    return this.prisma.cursoEmpleado.findMany({
-      where: { 
-        usuarioId,
-        estado: 'VALIDADO', // Solo lo que el Admin ya aprobó
-      },
-      include: {
-        curso: {
-          select: { nombre: true, duracionHrs: true, tipo: true }
-        }
-      }
-    });
-  }
-
-  async cancelarInscripcion(id: number, usuarioId: number) {
-    const inscripcion = await this.prisma.cursoEmpleado.findFirst({
-      where: { id, usuarioId },
-      include: { curso: true }
-    });
-
-    if (!inscripcion) throw new NotFoundException('Inscripción no encontrada');
-
-    // Regla de ITESCA: No se puede cancelar si el curso ya inició
-    if (new Date() > new Date(inscripcion.curso.fechaInicio)) {
-      throw new BadRequestException('El curso ya inició, no puedes cancelar la inscripción');
-    }
-
-    return this.prisma.cursoEmpleado.delete({
-      where: { id }
-    });
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} curso`;
-  }
 }
