@@ -58,6 +58,7 @@ export class UsuariosService {
       data,
     });
   }
+  //USADO
   // OBTIENE CURSOS RELACIONADOS AL USUARIO SEGÚN SU ROL
   async getCursosPorUsuario(userId: number) {
     const usuario = await this.prisma.usuario.findUnique({
@@ -167,11 +168,12 @@ export class UsuariosService {
       include: { adscripcion: true },
     });
   }
+  //USADO
   //Update password
   async updatePassword(id: number, passActual: string, newPassword: string) {
     const usuario = await this.prisma.usuario.findUnique({ where: { id } });
     if (!usuario) throw new NotFoundException('Usuario no encontrado');
-    const isMatch = await bcrypt.compare(passActual, usuario.contrasena);
+    const isMatch = bcrypt.compareSync(passActual, usuario.contrasena);
     if (!isMatch) {
       throw new UnauthorizedException('La contraseña actual es incorrecta');
     }

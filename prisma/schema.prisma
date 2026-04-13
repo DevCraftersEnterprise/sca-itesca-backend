@@ -42,6 +42,7 @@ model Curso {
   fechaFin       DateTime
   horaInicio     String
   horaFin        String
+  capacidad      Int                @default(0)
   tipo           CursoTipo
   aula           String             @default("si")
   estado         CursoEstado        @default(POR_INSCRIBIR)
