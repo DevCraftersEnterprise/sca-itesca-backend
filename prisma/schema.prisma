@@ -16,6 +16,7 @@ model Usuario {
   contrasena       String
   rol              Role            @default(EMPLEADO)
   puesto           String
+  estado           UsuarioEstado   @default(ACTIVO)
   adscripcionId    Int
   asistencias      Asistencia[]
   cursosCreados    Curso[]         @relation("AdminCreador")
@@ -108,7 +109,10 @@ enum CursoEstado {
   EN_CURSO
   FINALIZADO
 }
-
+enum UsuarioEstado {
+  ACTIVO
+  INACTIVO
+}
 enum AsistenciaEstado {
   ASISTENCIA
   FALTA
