@@ -9,7 +9,7 @@ datasource db {
 
 model Usuario {
   id               Int             @id @default(autoincrement())
-  username         String          @unique
+  nomina           String          @unique
   nombres          String
   apellidos        String
   correo           String          @unique
