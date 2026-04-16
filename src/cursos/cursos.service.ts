@@ -116,7 +116,35 @@ export class CursosService {
       },
     });
   }
+  
+  async inscribirMasivo(cursoId: number, usuarioIds: number[]) {
+    // 1. Validar si el curso existe
+    const curso = await this.prisma.curso.findUnique({
+      where: { id: cursoId },
+    });
 
+    if (!curso) {
+      throw new NotFoundException('El curso no existe');
+    }
+    // 2. Filtrar los usuarios que ya están inscritos para evitar errores de duplicado
+    const inscripcionesPrevias = await this.prisma.cursoEmpleado.findMany({
+      where: {
+        cursoId: cursoId,
+        usuarioId: { in: usuarioIds },
+      },
+    });
+    const usuariosYaInscritos = inscripcionesPrevias.map((insc) => insc.usuarioId);
+    const nuevosUsuarios = usuarioIds.filter((id) => !usuariosYaInscritos.includes(id));
+    // 3. Crear las nuevas inscripciones en bloque
+    const nuevasInscripciones = nuevosUsuarios.map((usuarioId) => ({
+      cursoId: cursoId,
+      usuarioId: usuarioId,
+    }));
+    return this.prisma.cursoEmpleado.createMany({
+      data: nuevasInscripciones,
+      skipDuplicates: true, // Por seguridad, aunque ya filtramos antes
+    });
+  }
   // Subir el PDF para que el Admin lo valide después
   async subirConstancia(inscripcionId: number, usuarioId: number, pdfUrl: string) {
     return this.prisma.cursoEmpleado.update({

@@ -42,6 +42,15 @@ export class CursosController {
     return this.cursosService.findOne(id);
   }
 
+  @Post('inscribir-masivo')
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async inscribirMasivo(
+    @Body('cursoId') cursoId: number, 
+    @Body('usuarioIds') usuarioIds: number[]
+  ) {
+    return this.cursosService.inscribirMasivo(cursoId, usuarioIds);
+  }
   // 2. Para el botón "Asistencia" -> /cursos/:id/asistencia
   @Get(':id/asistencia')
   async getAsistenciasCurso(@Param('id', ParseIntPipe) id: number) {
