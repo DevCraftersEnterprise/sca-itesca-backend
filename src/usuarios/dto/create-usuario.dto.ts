@@ -5,12 +5,12 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUsuarioDto {
   @IsString()
-  @IsNotEmpty({ message: 'El username es obligatorio' })
+  @IsNotEmpty({ message: 'La nomina es obligatoria' })
   @ApiProperty({
-    description: 'Unique username for the user',
+    description: 'Unique nomina for the user',
     example: 'johndoe123',
   })
-  username!: string;
+  nomina!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
