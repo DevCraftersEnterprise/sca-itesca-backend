@@ -63,7 +63,7 @@ export class UsuariosService {
   async getCursosPorUsuario(userId: number) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
-      select: { rol: true, id: true },
+      select: { rol: true, id: true, adscripcionId: true }
     });
 
     if (!usuario) throw new NotFoundException(`Usuario con ID ${userId} no existe`);
@@ -131,7 +131,8 @@ export class UsuariosService {
           where: {
             estado: 'POR_INSCRIBIR',
             tipo: 'INTERNO',
-            empleados: { none: { usuarioId: usuario.id } }
+            empleados: { none: { usuarioId: usuario.id } },
+            adscripciones: { some: { adscripcionId: usuario.adscripcionId } }
           },
           include: { 
             instructor: true,
@@ -139,8 +140,8 @@ export class UsuariosService {
               include: {
                 adscripcion: true
               }
-            } 
-          }
+            }
+          },
         }),
 
         // 5. Historial (Llevó o está llevando en el año actual)
