@@ -111,8 +111,6 @@ export class CursosService {
       data: {
         cursoId: cursoId,
         usuarioId: usuarioId,
-        estado: 'POR_VALIDAR', // Según tu enum ValidacionEstado
-        // fechaSubida se pone sola por el @default(now())
       },
     });
   }

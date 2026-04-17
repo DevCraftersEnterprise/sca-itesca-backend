@@ -27,7 +27,7 @@ export class CursosController {
 
   // 3. Inscribirse a un curso (Solo EMPLEADO)
   @Post('inscribir')
-  @Roles(Role.ADMIN)
+  @Roles(Role.EMPLEADO)
   @UseGuards(AuthGuard('jwt'), RolesGuard) // Protegemos la ruta
   async inscribir(
     @Body('cursoId') cursoId: number, 
