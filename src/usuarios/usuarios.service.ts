@@ -136,11 +136,14 @@ export class UsuariosService {
           },
           include: { 
             instructor: true,
-             adscripciones: {
+            adscripciones: {
               include: {
                 adscripcion: true
               }
-            }
+            },
+            empleados: {
+              include: { usuario: true }
+            },
           },
         }),
 
