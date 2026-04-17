@@ -77,7 +77,7 @@ model CursoAdscripcion {
 
 model CursoEmpleado {
   id           Int              @id @default(autoincrement())
-  fechaSubida  DateTime         @default(now())
+  fechaSubida  DateTime?
   estado       ValidacionEstado?
   calificacion Calificacion?
   constancia   String?

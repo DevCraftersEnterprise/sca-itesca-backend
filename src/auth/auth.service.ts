@@ -14,12 +14,12 @@ export class AuthService {
     // Nota: Necesitas un método 'findByEmail' en tu UsuariosService
     const usuario = await this.usuariosService.findByEmail(correo);
     if (!usuario) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('No se encontro usuario');
     }
     // 2. Comparamos la contraseña encriptada
     const isMatch = await bcrypt.compare(pass, usuario.contrasena);
     if (!isMatch) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Contraseña inválida');
     }
     // 3. Si todo está bien, generamos el Token con su ROL
     const payload = { sub: usuario.id, email: usuario.correo, rol: usuario.rol };
@@ -30,7 +30,7 @@ export class AuthService {
         nomina: usuario.nomina,
         rol: usuario.rol,
         adscripcion: usuario.adscripcion ? usuario.adscripcion.clave : null,
-        nombres: usuario.nombres,
+        nombres: usuario.nombres, 
         apellidos: usuario.apellidos,
         correo: usuario.correo,
         puesto: usuario.puesto,
