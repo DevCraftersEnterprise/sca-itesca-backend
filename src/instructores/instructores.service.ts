@@ -9,19 +9,11 @@ const SVGtoPDF = require('svg-to-pdfkit');
 
 @Injectable()
 export class InstructoresService {
-  constructor(private prisma: PrismaService,
-              private cloudinaryService: CloudinaryService
-  ) {}
-
-
-  // 2. Registrar asistencia del DÍA ACTUAL (o cualquier fecha)
-  // Este método es un "Upsert": si ya existe, lo cambia; si no, lo crea.
+  constructor(private prisma: PrismaService,private cloudinaryService: CloudinaryService) {}
+  // 1. Registrar asistencia del día (Presente/Ausente/Justificado)
   async registrarAsistenciaDia(cursoId: number, usuarioId: number, estado: any, fecha?: string) {
-    // Si no mandan fecha, usamos "Hoy" a las 00:00:00
     const fechaAsistencia = fecha ? new Date(fecha) : new Date();
     fechaAsistencia.setHours(0, 0, 0, 0);
-
-    // Buscamos si ya se marcó asistencia para este alumno en este curso este día
     const existente = await this.prisma.asistencia.findFirst({
       where: {
         cursoId,
@@ -29,14 +21,12 @@ export class InstructoresService {
         fecha: fechaAsistencia
       }
     });
-
     if (existente) {
       return this.prisma.asistencia.update({
         where: { id: existente.id },
         data: { estado }
       });
     }
-
     return this.prisma.asistencia.create({
       data: {
         cursoId,

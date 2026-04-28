@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class CursosService {
@@ -57,7 +58,7 @@ export class CursosService {
   async findOne(id: number, userId: number) {
     const user = await this.prisma.usuario.findUnique({
       where: { id: userId },
-    });
+    }); 
     if (!user) throw new NotFoundException('Usuario no encontrado');
     if (user.rol === 'EMPLEADO') {
       return this.prisma.curso.findUnique({
@@ -110,7 +111,6 @@ export class CursosService {
         }
       });
     }
-    
   }
   // 4. Inscripción masiva (Solo ADMIN)
   async inscribirMasivo(cursoId: number, usuarioIds: number[]) {
@@ -137,21 +137,20 @@ export class CursosService {
       skipDuplicates: true,
     });
   }
-
-
-
-
-
+  // 5. Para el botón "Asistencia" -> /cursos/:id/asistencia
   async findAsistencias(id: number) {
-    // Solo traemos la lista de alumnos y sus asistencias registradas
     return this.prisma.asistencia.findMany({
       where: { cursoId: id },
       include: {
-        usuario: true // Para saber el nombre del alumno
+        usuario: true
       },
       orderBy: { fecha: 'desc' }
     });
   }
+
+
+
+
   async update(id: number, dto: UpdateCursoDto) {
     const { adscripcionesIds, ...cursoData } = dto;
 
@@ -160,7 +159,7 @@ export class CursosService {
       data: {
         ...cursoData,
         adscripciones: adscripcionesIds ? {
-          deleteMany: {}, // Borramos las vinculaciones actuales de este curso
+          deleteMany: {}, 
           create: adscripcionesIds.map((adscId) => ({
             adscripcionId: adscId,
           })),
@@ -207,4 +206,34 @@ export class CursosService {
     });
   }
 
+
+  // Tarea programada para actualizar estados de cursos automáticamente
+  @Cron(CronExpression.EVERY_HOUR) // Se ejecuta cada hora
+  async handleCron() {
+    const ahora = new Date();
+    console.log('Revisando estados de cursos...');
+
+    // Pasar a EN_CURSO
+    const iniciados = await this.prisma.curso.updateMany({
+      where: {
+        fechaInicio: { lte: ahora },
+        fechaFin: { gte: ahora },
+        estado: 'POR_INSCRIBIR',
+      },
+      data: { estado: 'EN_CURSO' },
+    });
+
+    // Pasar a FINALIZADO
+    const terminados = await this.prisma.curso.updateMany({
+      where: {
+        fechaFin: { lt: ahora },
+        estado: { not: 'FINALIZADO' },
+      },
+      data: { estado: 'FINALIZADO' },
+    });
+
+    if (iniciados.count > 0 || terminados.count > 0) {
+      console.log(`Actualizados: ${iniciados.count} iniciados, ${terminados.count} finalizados.`);
+    }
+  }
 }
