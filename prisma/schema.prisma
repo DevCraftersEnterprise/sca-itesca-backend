@@ -59,7 +59,7 @@ model Curso {
 
 model Asistencia {
   id        Int              @id @default(autoincrement())
-  estado    AsistenciaEstado
+  estado    AsistenciaEstado?
   fecha     DateTime         @default(now())
   cursoId   Int
   usuarioId Int

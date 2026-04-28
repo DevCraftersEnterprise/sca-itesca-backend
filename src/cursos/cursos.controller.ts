@@ -25,23 +25,31 @@ export class CursosController {
     return this.cursosService.create(createCursoDto, adminId);
   }
 
-  // 3. Inscribirse a un curso (Solo EMPLEADO)
+  // 2. Inscribirse a un curso (Solo EMPLEADO)
   @Post('inscribir')
   @Roles(Role.EMPLEADO)
-  @UseGuards(AuthGuard('jwt'), RolesGuard) // Protegemos la ruta
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async inscribir(
     @Body('cursoId') cursoId: number, 
-    @Req() req: any // 'req.user' contendrá los datos del JWT
+    @Req() req: any
   ) {
     const usuarioId = req.user.id;
     return this.cursosService.inscribir(cursoId, usuarioId);
   }
-  // 1. Para el botón "Ver curso" -> /cursos/:id
+
+  // 3. Ver detalles de un curso (Abierto para todos)
   @Get(':id')
-  async getDetalleCurso(@Param('id', ParseIntPipe) id: number) {
-    return this.cursosService.findOne(id);
+  @Roles(Role.ADMIN, Role.INSTRUCTOR, Role.EMPLEADO)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async getDetalleCurso(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: any
+  ) {
+    const userId = req.user.id;
+    return this.cursosService.findOne(id, userId);
   }
 
+  // 4. Inscripción masiva a un curso (Solo ADMIN)
   @Post('inscribir-masivo')
   @Roles(Role.ADMIN)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -51,8 +59,16 @@ export class CursosController {
   ) {
     return this.cursosService.inscribirMasivo(cursoId, usuarioIds);
   }
+
+
+
+
+
+
   // 2. Para el botón "Asistencia" -> /cursos/:id/asistencia
   @Get(':id/asistencia')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getAsistenciasCurso(@Param('id', ParseIntPipe) id: number) {
     return this.cursosService.findAsistencias(id);
   }

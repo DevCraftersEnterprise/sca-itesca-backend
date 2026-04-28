@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class CursosService {
   constructor(private prisma: PrismaService) {}
-
+  // 1. Crear curso (Solo ADMIN)
   async create(dto: CreateCursoDto, creadorId: number) {
     const { adscripcionesIds, ...cursoData } = dto;
     return this.prisma.curso.create({
@@ -21,39 +21,127 @@ export class CursosService {
       },
       include: {
         adscripciones: {
-          include: { adscripcion: true } // Para que devuelva los nombres de las áreas
+          include: { adscripcion: true }
         },
         instructor: {
-          select: { nombres: true, apellidos: true } // Para confirmar quién es el instructor
+          select: { nombres: true, apellidos: true }
         }
       }
     });
   }
-
-  async findOne(id: number) {
+  // 2. Inscribirse a un curso (Solo EMPLEADO)
+  async inscribir(cursoId: number, usuarioId: number) {
     const curso = await this.prisma.curso.findUnique({
-      where: { id },
-      include: {
-        instructor: true,
-        adscripciones: { include: { adscripcion: true } },
-        // Traemos a los empleados inscritos para la vista de "Ver curso"
-        empleados: {
-          include: { 
-            usuario: {
-              include: {
-                adscripcion: true 
-              }
+      where: { id: cursoId },
+    });
+    if (!curso) {
+      throw new NotFoundException('El curso no existe');
+    }
+    const inscripcionPrevia = await this.prisma.cursoEmpleado.findFirst({
+      where: {
+        cursoId: cursoId,
+        usuarioId: usuarioId,
+      },
+    });
+    if (inscripcionPrevia) {
+      throw new BadRequestException('Ya estás inscrito en este curso');
+    }
+    return this.prisma.cursoEmpleado.create({
+      data: {
+        cursoId: cursoId,
+        usuarioId: usuarioId,
+      },
+    });
+  }
+  // 3. Ver detalles de un curso (Abierto para todos)
+  async findOne(id: number, userId: number) {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    if (user.rol === 'EMPLEADO') {
+      return this.prisma.curso.findUnique({
+        where: { id },
+        include: {
+          instructor: true,
+          adscripciones: { include: { adscripcion: true } },
+          empleados: {
+            select: {
+              id: true,
             }
           }
-        },
-        asistencias: {
-          include: { usuario: true }
-        },
-      }
-    });
-    if (!curso) throw new NotFoundException('Curso no encontrado');
-    return curso;
+        }
+      });
+    } else if (user.rol === 'INSTRUCTOR') {
+      return this.prisma.curso.findUnique({
+        where: { id },
+        include: {
+          instructor: true,
+          adscripciones: { include: { adscripcion: true } },
+          empleados: {
+            include: { 
+              usuario: {
+                include: {
+                  adscripcion: true 
+                }
+              }
+            }
+          },
+          asistencias: {
+            include: { usuario: true }
+          },
+        }
+      });
+    } else {
+      return await this.prisma.curso.findUnique({
+        where: { id },
+        include: {
+          instructor: true,
+          adscripciones: { include: { adscripcion: true } },
+          empleados: {
+            include: { 
+              usuario: {
+                include: {
+                  adscripcion: true 
+                }
+              }
+            }
+          },
+        }
+      });
+    }
+    
   }
+  // 4. Inscripción masiva (Solo ADMIN)
+  async inscribirMasivo(cursoId: number, usuarioIds: number[]) {
+    const curso = await this.prisma.curso.findUnique({
+      where: { id: cursoId },
+    });
+    if (!curso) {
+      throw new NotFoundException('El curso no existe');
+    }
+    const inscripcionesPrevias = await this.prisma.cursoEmpleado.findMany({
+      where: {
+        cursoId: cursoId,
+        usuarioId: { in: usuarioIds },
+      },
+    });
+    const usuariosYaInscritos = inscripcionesPrevias.map((insc) => insc.usuarioId);
+    const nuevosUsuarios = usuarioIds.filter((id) => !usuariosYaInscritos.includes(id));
+    const nuevasInscripciones = nuevosUsuarios.map((usuarioId) => ({
+      cursoId: cursoId,
+      usuarioId: usuarioId,
+    }));
+    return this.prisma.cursoEmpleado.createMany({
+      data: nuevasInscripciones,
+      skipDuplicates: true,
+    });
+  }
+
+
+
+
+
   async findAsistencias(id: number) {
     // Solo traemos la lista de alumnos y sus asistencias registradas
     return this.prisma.asistencia.findMany({
@@ -83,66 +171,7 @@ export class CursosService {
       }
     });
   }
-
-  async inscribir(cursoId: number, usuarioId: number) {
-    // 1. Validar si el curso existe
-    const curso = await this.prisma.curso.findUnique({
-      where: { id: cursoId },
-    });
-
-    if (!curso) {
-      throw new NotFoundException('El curso no existe');
-    }
-
-    // 2. Validar si ya está inscrito (Buscamos por la pareja curso-usuario)
-    const inscripcionPrevia = await this.prisma.cursoEmpleado.findFirst({
-      where: {
-        cursoId: cursoId,
-        usuarioId: usuarioId,
-      },
-    });
-
-    if (inscripcionPrevia) {
-      throw new BadRequestException('Ya estás inscrito en este curso');
-    }
-
-    // 3. Crear la inscripción con los campos de tu modelo
-    return this.prisma.cursoEmpleado.create({
-      data: {
-        cursoId: cursoId,
-        usuarioId: usuarioId,
-      },
-    });
-  }
   
-  async inscribirMasivo(cursoId: number, usuarioIds: number[]) {
-    // 1. Validar si el curso existe
-    const curso = await this.prisma.curso.findUnique({
-      where: { id: cursoId },
-    });
-
-    if (!curso) {
-      throw new NotFoundException('El curso no existe');
-    }
-    // 2. Filtrar los usuarios que ya están inscritos para evitar errores de duplicado
-    const inscripcionesPrevias = await this.prisma.cursoEmpleado.findMany({
-      where: {
-        cursoId: cursoId,
-        usuarioId: { in: usuarioIds },
-      },
-    });
-    const usuariosYaInscritos = inscripcionesPrevias.map((insc) => insc.usuarioId);
-    const nuevosUsuarios = usuarioIds.filter((id) => !usuariosYaInscritos.includes(id));
-    // 3. Crear las nuevas inscripciones en bloque
-    const nuevasInscripciones = nuevosUsuarios.map((usuarioId) => ({
-      cursoId: cursoId,
-      usuarioId: usuarioId,
-    }));
-    return this.prisma.cursoEmpleado.createMany({
-      data: nuevasInscripciones,
-      skipDuplicates: true, // Por seguridad, aunque ya filtramos antes
-    });
-  }
   // Subir el PDF para que el Admin lo valide después
   async subirConstancia(inscripcionId: number, usuarioId: number, pdfUrl: string) {
     return this.prisma.cursoEmpleado.update({
