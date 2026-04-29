@@ -240,7 +240,7 @@ export class CursosService {
         );
       }
     } catch (error) {
-      throw new BadRequestException('Error al actualizar estados de cursos', error);
+      throw new BadRequestException('Error al actualizar estados de cursos');
     }
   }
 }
