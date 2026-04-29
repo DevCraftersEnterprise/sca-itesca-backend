@@ -213,12 +213,9 @@ export class CursosService {
     const ahora = new Date();
     const DESFASE_SONORA = 7 * 60 * 60 * 1000; // 7 horas en milisegundos
     const ahoraSonora = new Date(ahora.getTime() - DESFASE_SONORA);
-
-    // 2. OBTENER EL INICIO DEL DÍA EN SONORA (00:00:00)
     const inicioHoySonora = new Date(ahoraSonora);
     inicioHoySonora.setHours(0, 0, 0, 0);
     try {
-      // Se activa si ya es el día de inicio (00:00:00) y aún no termina el curso
       const iniciados = await this.prisma.curso.updateMany({
         where: {
           fechaInicio: { lte: ahoraSonora },
@@ -229,7 +226,7 @@ export class CursosService {
       });
       const terminados = await this.prisma.curso.updateMany({
         where: {
-          fechaFin: { lt: inicioHoySonora }, // La fecha fin ya quedó en el pasado (ayer o antes)
+          fechaFin: { lt: inicioHoySonora }, 
           estado: { not: 'FINALIZADO' },
         },
         data: { estado: 'FINALIZADO' },
