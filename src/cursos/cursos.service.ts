@@ -211,29 +211,36 @@ export class CursosService {
   @Cron(CronExpression.EVERY_HOUR) // Se ejecuta cada hora
   async handleCron() {
     const ahora = new Date();
-    console.log('Revisando estados de cursos...');
+    const DESFASE_SONORA = 7 * 60 * 60 * 1000; // 7 horas en milisegundos
+    const ahoraSonora = new Date(ahora.getTime() - DESFASE_SONORA);
 
-    // Pasar a EN_CURSO
-    const iniciados = await this.prisma.curso.updateMany({
-      where: {
-        fechaInicio: { lte: ahora },
-        fechaFin: { gte: ahora },
-        estado: 'POR_INSCRIBIR',
-      },
-      data: { estado: 'EN_CURSO' },
-    });
-
-    // Pasar a FINALIZADO
-    const terminados = await this.prisma.curso.updateMany({
-      where: {
-        fechaFin: { lt: ahora },
-        estado: { not: 'FINALIZADO' },
-      },
-      data: { estado: 'FINALIZADO' },
-    });
-
-    if (iniciados.count > 0 || terminados.count > 0) {
-      console.log(`Actualizados: ${iniciados.count} iniciados, ${terminados.count} finalizados.`);
+    // 2. OBTENER EL INICIO DEL DÍA EN SONORA (00:00:00)
+    const inicioHoySonora = new Date(ahoraSonora);
+    inicioHoySonora.setHours(0, 0, 0, 0);
+    try {
+      // Se activa si ya es el día de inicio (00:00:00) y aún no termina el curso
+      const iniciados = await this.prisma.curso.updateMany({
+        where: {
+          fechaInicio: { lte: ahoraSonora },
+          fechaFin: { gte: inicioHoySonora },
+          estado: 'POR_INSCRIBIR' 
+        },
+        data: { estado: 'EN_CURSO' },
+      });
+      const terminados = await this.prisma.curso.updateMany({
+        where: {
+          fechaFin: { lt: inicioHoySonora }, // La fecha fin ya quedó en el pasado (ayer o antes)
+          estado: { not: 'FINALIZADO' },
+        },
+        data: { estado: 'FINALIZADO' },
+      });
+      if (iniciados.count > 0 || terminados.count > 0) {
+        console.log(
+          `Actualización exitosa: ${iniciados.count} iniciados, ${terminados.count} finalizados.`
+        );
+      }
+    } catch (error) {
+      throw new BadRequestException('Error al actualizar estados de cursos', error);
     }
   }
 }
