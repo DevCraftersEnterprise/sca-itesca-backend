@@ -122,6 +122,7 @@ enum AsistenciaEstado {
 enum ValidacionEstado {
   POR_VALIDAR
   VALIDADO
+  NO_VALIDADO
 }
 
 enum Calificacion {
