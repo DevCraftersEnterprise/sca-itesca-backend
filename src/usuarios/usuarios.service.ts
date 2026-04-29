@@ -122,7 +122,12 @@ export class UsuariosService {
               include: {
                 adscripcion: true
               }
-            } 
+            },
+            empleados: {
+              where: {
+                usuarioId: usuario.id
+              },
+            },
           }
         }),
 
