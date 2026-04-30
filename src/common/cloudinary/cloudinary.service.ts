@@ -28,8 +28,7 @@ export class CloudinaryService {
     const upload = cloudinary.uploader.upload_stream(
       {
         folder: 'constancias_itesca',
-        resource_type: 'raw',
-        format: 'pdf',
+        resource_type: 'auto',
 
         public_id: publicId,       // 🔥 NOMBRE REAL
         overwrite: true,           // 🔥 evita duplicados

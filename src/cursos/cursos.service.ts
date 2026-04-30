@@ -3,10 +3,14 @@ import { CreateCursoDto } from './dto/create-curso.dto';
 import { UpdateCursoDto } from './dto/update-curso.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class CursosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService
+  ) {}
   // 1. Crear curso (Solo ADMIN)
   async create(dto: CreateCursoDto, creadorId: number) {
     const { adscripcionesIds, ...cursoData } = dto;
@@ -172,14 +176,34 @@ export class CursosService {
   }
   
   // Subir el PDF para que el Admin lo valide después
-  async subirConstancia(inscripcionId: number, usuarioId: number, pdfUrl: string) {
-    return this.prisma.cursoEmpleado.update({
-      where: { id: inscripcionId, usuarioId }, // Seguridad: debe ser su propia inscripción
-      data: {
-        constancia: pdfUrl,
-        estado: 'POR_VALIDAR' // Al subir el PDF, vuelve a revisión
+  async subirConstancia(usuarioId: number, cursoId: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No se ha proporcionado ningún archivo');
+    }
+    const inscripcion = await this.prisma.cursoEmpleado.findFirst({
+      where: {
+        usuarioId: usuarioId,
+        cursoId: cursoId
       }
     });
+    if (!inscripcion) {
+      throw new BadRequestException('No se encontró la inscripción');
+    }
+    try {
+      const publicId = `comprobante_u${usuarioId}_c${cursoId}`;
+      const resultado = await this.cloudinaryService.uploadFile(file, publicId);
+      return this.prisma.cursoEmpleado.update({
+        where: { id: inscripcion.id, usuarioId }, // Seguridad: debe ser su propia inscripción
+        data: {
+          constancia: resultado,
+          estado: 'POR_VALIDAR',
+          fechaSubida: new Date(),
+        }
+      });
+    } catch (error) {
+      throw new BadRequestException('Error al subir el archivo a Cloudinary');
+    }
+    
   }
 
   async actualizarConstancia(inscripcionId: number, usuarioId: number, url: string) {

@@ -60,36 +60,36 @@ export class CursosController {
     return this.cursosService.inscribirMasivo(cursoId, usuarioIds);
   }
 
-
-
-
-
-
-  // 2. Para el botón "Asistencia" -> /cursos/:id/asistencia
+  // 5. Ver asistencias de un curso (Solo INSTRUCTOR)
   @Get(':id/asistencia')
   @Roles(Role.INSTRUCTOR)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getAsistenciasCurso(@Param('id', ParseIntPipe) id: number) {
     return this.cursosService.findAsistencias(id);
   }
+  
+  // 6. Subir constancia de un curso (Solo EMPLEADO)
+  @Patch('subir-constancia/:id')
+  @Roles(Role.EMPLEADO)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseInterceptors(FileInterceptor('file')) 
+  async subirConstancia(
+    @Param('cursoId', ParseIntPipe) cursoId: number,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any
+  ) {
+    const usuarioId = req.user.id;
+    return this.cursosService.subirConstancia(usuarioId, cursoId, file);
+  }
+
+
+
+
+
   // 11. Actualizar curso (Solo ADMIN)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
     return this.cursosService.update(+id, updateCursoDto);
   }
-  // 12. Subir constancia de un curso (Solo EMPLEADO)
-  @Patch('subir-constancia/:id')
-  @Roles(Role.EMPLEADO)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @UseInterceptors(FileInterceptor('archivo')) 
-  async subirConstancia(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Req() req: any
-  ) {
-    // 1. Subimos a Cloudinary primero
-    const urlCloudinary = await this.cloudinaryService.uploadFile(file);
-    // 2. Guardamos esa URL en la base de datos
-    return this.cursosService.actualizarConstancia(+id, req.user.id, urlCloudinary);
-  }
+  
 }
