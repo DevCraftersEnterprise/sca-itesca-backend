@@ -14,6 +14,15 @@ export class InstructoresService {
   async registrarAsistenciaDia(cursoId: number, usuarioIds: number[], fecha?: string) {
     const fechaAsistencia = fecha ? new Date(fecha) : new Date();
     fechaAsistencia.setHours(0, 0, 0, 0);
+    const inicioDia = new Date(fechaAsistencia)
+    inicioDia.setHours(0, 0, 0, 0)
+
+    const finDia = new Date(fechaAsistencia)
+    finDia.setHours(23, 59, 59, 999)
+    console.log("Fecha recibida para registrar asistencia:", fecha);
+    console.log("Curso ID:", cursoId);
+    console.log("Usuario IDs:", usuarioIds);
+    
     const existente = await this.prisma.asistencia.findFirst({
       where: {
         cursoId,
