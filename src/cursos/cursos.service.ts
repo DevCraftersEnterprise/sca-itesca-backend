@@ -151,31 +151,7 @@ export class CursosService {
       orderBy: { fecha: 'desc' }
     });
   }
-
-
-
-
-  async update(id: number, dto: UpdateCursoDto) {
-    const { adscripcionesIds, ...cursoData } = dto;
-
-    return this.prisma.curso.update({
-      where: { id },
-      data: {
-        ...cursoData,
-        adscripciones: adscripcionesIds ? {
-          deleteMany: {}, 
-          create: adscripcionesIds.map((adscId) => ({
-            adscripcionId: adscId,
-          })),
-        } : undefined,
-      },
-      include: {
-        adscripciones: { include: { adscripcion: true } }
-      }
-    });
-  }
-  
-  // Subir el PDF para que el Admin lo valide después
+  // 6. Subir constancia de un curso (Solo EMPLEADO)
   async subirConstancia(usuarioId: number, cursoId: number, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No se ha proporcionado ningún archivo');
@@ -205,37 +181,30 @@ export class CursosService {
     }
     
   }
-
-  async actualizarConstancia(inscripcionId: number, usuarioId: number, url: string) {
-    // 1. Verificar el estado actual de la inscripción
-    const inscripcion = await this.prisma.cursoEmpleado.findFirst({
-      where: { id: inscripcionId, usuarioId }
-    });
-
-    if (!inscripcion) throw new NotFoundException('No se encontró la inscripción');
-
-    // 2. Regla de oro: No cambiar si ya está validado (opcional, tú decides)
-    if (inscripcion.estado === 'VALIDADO') {
-      throw new BadRequestException('No puedes cambiar el archivo de un curso ya validado');
-    }
-
-    // 3. Actualizar con el nuevo link de Cloudinary
-    return this.prisma.cursoEmpleado.update({
-      where: { id: inscripcionId },
+  // 7. Actualizar curso (Solo ADMIN) - No se ha usado
+  async update(id: number, dto: UpdateCursoDto) {
+    const { adscripcionesIds, ...cursoData } = dto;
+    return this.prisma.curso.update({
+      where: { id },
       data: {
-        constancia: url,
-        estado: 'POR_VALIDAR', // Regresa a revisión cada que se sube uno nuevo
-        fechaSubida: new Date(),
+        ...cursoData,
+        adscripciones: adscripcionesIds ? {
+          deleteMany: {}, 
+          create: adscripcionesIds.map((adscId) => ({
+            adscripcionId: adscId,
+          })),
+        } : undefined,
+      },
+      include: {
+        adscripciones: { include: { adscripcion: true } }
       }
     });
   }
-
-
-  // Tarea programada para actualizar estados de cursos automáticamente
-  @Cron(CronExpression.EVERY_HOUR) // Se ejecuta cada hora
+  // 8. Tarea programada para actualizar estados de cursos
+  @Cron(CronExpression.EVERY_HOUR) 
   async handleCron() {
     const ahora = new Date();
-    const DESFASE_SONORA = 7 * 60 * 60 * 1000; // 7 horas en milisegundos
+    const DESFASE_SONORA = 7 * 60 * 60 * 1000; 
     const ahoraSonora = new Date(ahora.getTime() - DESFASE_SONORA);
     const inicioHoySonora = new Date(ahoraSonora);
     inicioHoySonora.setHours(0, 0, 0, 0);

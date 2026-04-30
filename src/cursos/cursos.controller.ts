@@ -8,13 +8,12 @@ import { AuthGuard } from '@nestjs/passport'; // <--- Importa esto
 import { Roles } from '../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadedFile, UseInterceptors } from '@nestjs/common';
-import { CloudinaryService } from '../common/cloudinary/cloudinary.service'; // Ajusta la ruta si es necesario
 import 'multer';
+
 @Controller('cursos')
 export class CursosController {
   constructor(
     private readonly cursosService: CursosService,
-    private readonly cloudinaryService: CloudinaryService
   ) {}
   // 1. Crear curso (Solo ADMIN)
   @Post()
@@ -82,11 +81,7 @@ export class CursosController {
     return this.cursosService.subirConstancia(usuarioId, cursoId, file);
   }
 
-
-
-
-
-  // 11. Actualizar curso (Solo ADMIN)
+  // 7. Actualizar curso (Solo ADMIN) - No se ha usado
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
     return this.cursosService.update(+id, updateCursoDto);
