@@ -67,9 +67,9 @@ export class CursosController {
   async getAsistenciasCurso(@Param('id', ParseIntPipe) id: number) {
     return this.cursosService.findAsistencias(id);
   }
-  
+
   // 6. Subir constancia de un curso (Solo EMPLEADO)
-  @Patch('subir-constancia/:id')
+  @Patch('subir-constancia/:cursoId')
   @Roles(Role.EMPLEADO)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @UseInterceptors(FileInterceptor('file')) 
