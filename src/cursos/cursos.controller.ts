@@ -59,15 +59,7 @@ export class CursosController {
     return this.cursosService.inscribirMasivo(cursoId, usuarioIds);
   }
 
-  // 5. Ver asistencias de un curso (Solo INSTRUCTOR)
-  @Get(':id/asistencia')
-  @Roles(Role.INSTRUCTOR)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async getAsistenciasCurso(@Param('id', ParseIntPipe) id: number) {
-    return this.cursosService.findAsistencias(id);
-  }
-
-  // 6. Subir constancia de un curso (Solo EMPLEADO)
+  // 5. Subir constancia de un curso (Solo EMPLEADO)
   @Patch('subir-constancia/:cursoId')
   @Roles(Role.EMPLEADO)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -81,7 +73,7 @@ export class CursosController {
     return this.cursosService.subirConstancia(usuarioId, cursoId, file);
   }
 
-  // 7. Actualizar curso (Solo ADMIN) - No se ha usado
+  // 6. Actualizar curso (Solo ADMIN) - No se ha usado
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
     return this.cursosService.update(+id, updateCursoDto);

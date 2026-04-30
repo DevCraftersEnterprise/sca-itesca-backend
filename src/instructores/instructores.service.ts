@@ -10,32 +10,34 @@ const SVGtoPDF = require('svg-to-pdfkit');
 @Injectable()
 export class InstructoresService {
   constructor(private prisma: PrismaService,private cloudinaryService: CloudinaryService) {}
-  // 1. Registrar asistencia del día (Presente/Ausente/Justificado)
-  async registrarAsistenciaDia(cursoId: number, usuarioId: number, estado: any, fecha?: string) {
+  // 1. Registrar asistencia del día
+  async registrarAsistenciaDia(cursoId: number, usuarioIds: number[], fecha?: string) {
     const fechaAsistencia = fecha ? new Date(fecha) : new Date();
     fechaAsistencia.setHours(0, 0, 0, 0);
     const existente = await this.prisma.asistencia.findFirst({
       where: {
         cursoId,
-        usuarioId,
+        usuarioId: { in: usuarioIds },
         fecha: fechaAsistencia
       }
     });
     if (existente) {
-      return this.prisma.asistencia.update({
-        where: { id: existente.id },
-        data: { estado }
-      });
+      throw new NotFoundException('Ya se registró la asistencia para este día');
     }
-    return this.prisma.asistencia.create({
-      data: {
-        cursoId,
-        usuarioId,
-        fecha: fechaAsistencia,
-        estado
-      }
+    const data = usuarioIds.map(usuarioId => ({
+      cursoId,
+      usuarioId,
+      fecha: fechaAsistencia
+    }));
+    return this.prisma.asistencia.createMany({
+      data,
+      skipDuplicates: true,
     });
   }
+
+
+
+
 
   // ASIGNAR CALIFICACIÓN (APROBADO / REPROBADO)
   async asignarCalificacion(cursoId: number, usuarioId: number, calificacion: 'APROBADO' | 'REPROBADO') {
@@ -51,16 +53,6 @@ export class InstructoresService {
         estado: calificacion === 'APROBADO' ? 'VALIDADO' : 'POR_VALIDAR'
       }
     });
-  }
-  
-  // 1. Complemento para ver el reconocimiento del instructor
-  async verReconocimientoInstructor(cursoId: number, instructorId: number) {
-    const curso = await this.prisma.curso.findFirst({
-      where: { id: cursoId, instructorId: instructorId },
-      select: { reconocimiento: true } // Asegúrate que el campo se llame así
-    });
-    if (!curso?.reconocimiento) throw new NotFoundException('No hay reconocimiento disponible');
-    return { url: curso.reconocimiento };
   }
 
   // 2. Obtener todos los PDFs aprobados (para descarga masiva)

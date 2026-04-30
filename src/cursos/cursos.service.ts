@@ -141,17 +141,7 @@ export class CursosService {
       skipDuplicates: true,
     });
   }
-  // 5. Para el botón "Asistencia" -> /cursos/:id/asistencia
-  async findAsistencias(id: number) {
-    return this.prisma.asistencia.findMany({
-      where: { cursoId: id },
-      include: {
-        usuario: true
-      },
-      orderBy: { fecha: 'desc' }
-    });
-  }
-  // 6. Subir constancia de un curso (Solo EMPLEADO)
+  // 5. Subir constancia de un curso (Solo EMPLEADO)
   async subirConstancia(usuarioId: number, cursoId: number, file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No se ha proporcionado ningún archivo');
@@ -181,7 +171,7 @@ export class CursosService {
     }
     
   }
-  // 7. Actualizar curso (Solo ADMIN) - No se ha usado
+  // 6. Actualizar curso (Solo ADMIN) - No se ha usado
   async update(id: number, dto: UpdateCursoDto) {
     const { adscripcionesIds, ...cursoData } = dto;
     return this.prisma.curso.update({
@@ -200,7 +190,7 @@ export class CursosService {
       }
     });
   }
-  // 8. Tarea programada para actualizar estados de cursos
+  // 7. Tarea programada para actualizar estados de cursos
   @Cron(CronExpression.EVERY_HOUR) 
   async handleCron() {
     const ahora = new Date();

@@ -7,7 +7,7 @@ import { UpdateAdscripcionDto } from './dto/update-adscripcion.dto';
 export class AdscripcionService {
   constructor(private prisma: PrismaService) {}
 
-  // 1. Crear adscripción (Resuelve el error de la línea 17)
+  // 1. Crear adscripción 
   async create(createAdscripcionDto: CreateAdscripcionDto) {
     return this.prisma.adscripcion.create({
       data: createAdscripcionDto,
@@ -21,14 +21,14 @@ export class AdscripcionService {
     });
   }
 
-  // 3. Traer uno solo (Resuelve el error de la línea 22)
+  // 3. Traer uno solo - no se usa
   async findOne(nombre: string) {
     return this.prisma.adscripcion.findUnique({
       where: { nombre },
     });
   }
 
-  // 4. Actualizar (Resuelve el error de la línea 27)
+  // 4. Actualizar - no se usa
   async update(id: number, updateAdscripcionDto: UpdateAdscripcionDto) {
     return this.prisma.adscripcion.update({
       where: { id },
@@ -36,7 +36,7 @@ export class AdscripcionService {
     });
   }
 
-  // 5. Eliminar (Resuelve el error de la línea 32)
+  // 5. Eliminar - no se usa
   async remove(id: number) {
     return this.prisma.adscripcion.delete({
       where: { id },
