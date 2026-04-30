@@ -2,6 +2,9 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, Re
 import { AuthGuard } from '@nestjs/passport';
 import { InstructoresService } from './instructores.service';
 import express from 'express';
+import { RolesGuard } from 'src/common/guards/roles.guard';
+import { Role } from '@prisma/client';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('instructores')
 @UseGuards(AuthGuard('jwt'))
@@ -10,6 +13,8 @@ export class InstructoresController {
 
   // Cuando el Instructor da clic en "Presente" o "Ausente" hoy:
   @Post('asistencia-hoy')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async marcarHoy(
     @Body() data: { cursoId: number, usuarioId: number, estado: any, fecha?: string }
   ) {
@@ -24,6 +29,8 @@ export class InstructoresController {
   }
   // Patch para calificar: APROBADO o REPROBADO
   @Patch('calificar')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async calificar(
     @Body() data: { cursoId: number, usuarioId: number, calificacion: 'APROBADO' | 'REPROBADO' }
   ) {
@@ -32,6 +39,8 @@ export class InstructoresController {
 
   // 1. Ver el reconocimiento/diploma del propio instructor
   @Get('curso/:id/mi-reconocimiento')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async verMiReconocimiento(
     @Param('id') id: string, 
     @Req() req: any
@@ -42,15 +51,21 @@ export class InstructoresController {
 
   // 2. Obtener la lista de enlaces de todas las constancias de los alumnos aprobados
   @Get('curso/:id/constancias-alumnos')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async obtenerConstanciasAlumnos(@Param('id') id: string) {
     return this.instructoresService.obtenerTodasLasConstancias(+id);
   }
   @Get('curso/:id/reporte-asistencia')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async descargarReporte(@Param('id') id: string) {
     return this.instructoresService.reporteAsistencia(+id);
   }
   
   @Get(':cursoId/:usuarioId')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async generarConstancia(
     @Param('cursoId', ParseIntPipe) cursoId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
@@ -64,6 +79,8 @@ export class InstructoresController {
   }
 
   @Get('descargar-constancia/:cursoId/:usuarioId')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async descargar(
     @Param('cursoId') cursoId: string,
     @Param('usuarioId') usuarioId: string,

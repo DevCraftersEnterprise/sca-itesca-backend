@@ -30,13 +30,15 @@ export class UsuariosController {
   }
 
   @Get('mis-cursos')
-  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.EMPLEADO, Role.INSTRUCTOR, Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async getMisCursos(@Request() req) {
     // El ID viene del Token JWT
     return this.usuariosService.getCursosPorUsuario(req.user.id);
   }
   @Patch('update-password')
-  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.EMPLEADO, Role.INSTRUCTOR, Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   async updatePassword(
     @Request() req,
     @Body() data: { passActual: string; newPassword: string }
@@ -45,11 +47,15 @@ export class UsuariosController {
   }
 
   @Get(':id')
+  @Roles(Role.EMPLEADO, Role.INSTRUCTOR, Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   findOne(@Param('id') id: string) {
     return this.usuariosService.findOne(+id);
   }
 
   @Patch(':id')
+  @Roles(Role.EMPLEADO, Role.INSTRUCTOR, Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto) {
     return this.usuariosService.update(+id, updateUsuarioDto);
   }

@@ -79,7 +79,8 @@ export class CursosController {
   }
   // 12. Subir constancia de un curso (Solo EMPLEADO)
   @Patch('subir-constancia/:id')
-  @UseGuards(AuthGuard('jwt'))
+  @Roles(Role.EMPLEADO)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @UseInterceptors(FileInterceptor('archivo')) 
   async subirConstancia(
     @Param('id') id: string,
