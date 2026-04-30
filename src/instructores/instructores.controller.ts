@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InstructoresService } from './instructores.service';
 import express from 'express';
@@ -48,6 +48,19 @@ export class InstructoresController {
   @Get('curso/:id/reporte-asistencia')
   async descargarReporte(@Param('id') id: string) {
     return this.instructoresService.reporteAsistencia(+id);
+  }
+  
+  @Get(':cursoId/:usuarioId')
+  async generarConstancia(
+    @Param('cursoId', ParseIntPipe) cursoId: number,
+    @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    return this.instructoresService.generarConstanciaPDF(
+      cursoId,
+      usuarioId,
+      res,
+    );
   }
 
   @Get('descargar-constancia/:cursoId/:usuarioId')

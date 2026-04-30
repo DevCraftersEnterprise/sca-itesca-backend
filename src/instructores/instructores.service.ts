@@ -101,8 +101,9 @@ export class InstructoresService {
     }));
   }
   
-  async generarConstanciaPDF(cursoId: number, usuarioId: number, res: Response) {
+  async generarConstanciaPDF(cursoId: number, usuarioId: number, res: Response): Promise<void> {
     // 1. Buscamos la inscripción con todos los datos necesarios
+    try {
     const inscripcion = await this.prisma.cursoEmpleado.findUnique({
       where: { cursoId_usuarioId: { cursoId, usuarioId } },
       include: { usuario: true, curso: true }
@@ -114,108 +115,126 @@ export class InstructoresService {
     }
 
     // 2. Si ya tiene una constancia guardada (URL de Cloudinary), redirigimos y terminamos
-    
+    if (inscripcion.constancia) {
+      res.status(200).json({ url: inscripcion.constancia });
+      return;
+    }
 
     // 3. Si no existe, preparamos la generación del PDF en MEMORIA
     const mm = (v: number) => v * 2.83465;
     const doc = new PDFDocument({ size: 'LETTER', margin: 0 });
     const pageWidth = 612;
-    const chunks: any[] = [];
+    const pdfBuffer: Buffer = await new Promise((resolve, reject) => {
+      const chunks: any[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', (err) => reject(err));
 
-    // Capturamos los datos en un Buffer en lugar de enviarlos directo al 'res'
-    doc.on('data', (chunk) => chunks.push(chunk));
+      // --- DISEÑO DEL PDF (Dentro de la promesa) ---
+      const rutaAssets = join(process.cwd(), 'src/public/assets/certificados');
 
-    doc.on('end', async () => {
-      const pdfBuffer = Buffer.concat(chunks);
-      
       try {
-        // 4. Subimos a Cloudinary usando tu CloudinaryService
-        const fileMock = {
-          buffer: pdfBuffer,
-          originalname: `constancia_${cursoId}_${usuarioId}.pdf`,
-          mimetype: 'application/pdf',
-        } as Express.Multer.File;
+        // Fondo total
+        const fondo = fs.readFileSync(join(rutaAssets, 'fondo.svg'), 'utf8');
+        SVGtoPDF(doc, fondo, 0, 0, { width: 612, height: 792, preserveAspectRatio: 'none' });
 
-        const urlCloudinary = await this.cloudinaryService.uploadFile(fileMock);
+        // Título Constancia
+        const cons = fs.readFileSync(join(rutaAssets, 'constancia_titulo.svg'), 'utf8');
+        SVGtoPDF(doc, cons, (pageWidth - mm(108.2)) / 2 + mm(2), mm(68), { width: mm(108.2), height: mm(15.31) });
 
-        // 5. Guardamos la URL en la base de datos de Neon
-        await this.prisma.cursoEmpleado.update({
-          where: { cursoId_usuarioId: { cursoId, usuarioId } },
-          data: { constancia: urlCloudinary }
-        });
+        // Logos inferiores
+        const sep = fs.readFileSync(join(rutaAssets, 'sep1.svg'), 'utf8');
+        SVGtoPDF(doc, sep, mm(59), mm(256), { width: mm(34), height: mm(8) });
 
-        // 6. Finalmente, enviamos la URL como respuesta o redirigimos
-        return res.status(201).json({ url: urlCloudinary });
-        
-      } catch (error : any) {
-        console.error("DETALLE DEL ERROR DE CLOUDINARY:", error); // <--- ESTO ES CLAVE
-        return res.status(500).json({ 
-          message: 'Error al subir a Cloudinary', 
-          detalle: error.message || error 
-        });
+        const tecnm = fs.readFileSync(join(rutaAssets, 'tecnmlogo.svg'), 'utf8');
+        SVGtoPDF(doc, tecnm, mm(97), mm(255), { width: mm(18.11), height: mm(9.21) });
+
+        const sonora = fs.readFileSync(join(rutaAssets, 'sonoraoprlogo.svg'), 'utf8');
+        SVGtoPDF(doc, sonora, mm(120.5), mm(253.8), { width: mm(40.61), height: mm(10.21) });
+
+        // Logo Institución
+        doc.image(join(rutaAssets, 'logo.png'), (pageWidth - mm(80)) / 2, mm(12), { width: mm(80), height: mm(25) });
+      
+
+        // Textos
+        doc.fillColor('#000000');
+        doc.font('Helvetica').fontSize(14).text("El Instituto Tecnológico Superior de Cajeme", 0, mm(51), { align: 'center', width: pageWidth });
+        doc.text("otorga la presente", 0, mm(60), { align: 'center', width: pageWidth });
+        doc.text("a:", 0, mm(92), { align: 'center', width: pageWidth });
+
+        const nombreUsuario = `${inscripcion.usuario.nombres} ${inscripcion.usuario.apellidos}`.toUpperCase();
+        doc.font('Times-Bold').fontSize(32)
+          .text(nombreUsuario, 0, mm(108), { align: 'center', width: pageWidth });
+
+        // DESCRIPCIÓN
+        doc.font('Helvetica').fontSize(14);
+        doc.text("Por su destacada participación en el Curso de capacitación interno", 0, mm(123), { align: 'center', width: pageWidth });
+        doc.text("realizado el 13 de Marzo del 2025, en las instalaciones de esta casa de estudios,", 0, mm(129), { align: 'center', width: pageWidth });
+        doc.text("donde presentó la capacitación del curso:", 0, mm(135), { align: 'center', width: pageWidth });
+
+        // NOMBRE CURSO (y: 148mm)
+        doc.font('Helvetica-Bold').fontSize(14)
+          .text(`“${inscripcion.curso.nombre}”`, 0, mm(148), { align: 'center', width: pageWidth });
+
+        // RECONOCEMOS...
+        doc.font('Helvetica').fontSize(14)
+          .text("Reconocemos su dedicación, determinación y compromiso con la", 0, mm(161), { align: 'center', width: pageWidth });
+        doc.text("finalización del curso establecido por la institución.", 0, mm(168), { align: 'center', width: pageWidth });
+
+        // FIRMAS
+        doc.fontSize(15).text("Lic. Margarita Vélez de la Rocha", 0, mm(213), { align: 'center', width: pageWidth });
+        doc.fontSize(12).text("Directora General", 0, mm(220), { align: 'center', width: pageWidth });
+
+        // CIUDAD Y FECHA
+        doc.fontSize(14).text("Cd. Obregón, Sonora, a Marzo de 2025", 0, mm(245), { align: 'center', width: pageWidth });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
       }
     });
+      
+    const limpiar = (texto: string) =>
+      texto
+        .toLowerCase()
+        .normalize("NFD") // quita acentos
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/[^\w\-]/g, "");
 
-    // --- DISEÑO DEL PDF (Tu código de assets y textos) ---
-    const rutaAssets = join(process.cwd(), 'src/public/assets/certificados');
+    const nombreArchivo = `${limpiar(inscripcion.curso.nombre)}_${limpiar(inscripcion.usuario.nombres)}_${limpiar(inscripcion.usuario.apellidos)}`;
+    
+      // 4. Subimos a Cloudinary usando tu CloudinaryService
+      const fileMock = {
+        buffer: pdfBuffer,
+        originalname: nombreArchivo,
+        mimetype: 'application/pdf',
+      } as Express.Multer.File;
 
-    try {
-      // Fondo total
-      const fondo = fs.readFileSync(join(rutaAssets, 'fondo.svg'), 'utf8');
-      SVGtoPDF(doc, fondo, 0, 0, { width: 612, height: 792, preserveAspectRatio: 'none' });
+      const urlCloudinary = await this.cloudinaryService.uploadFile(fileMock, nombreArchivo);
 
-      // Título Constancia
-      const cons = fs.readFileSync(join(rutaAssets, 'constancia_titulo.svg'), 'utf8');
-      SVGtoPDF(doc, cons, (pageWidth - mm(108.2)) / 2 + mm(2), mm(68), { width: mm(108.2), height: mm(15.31) });
+      // 5. Guardamos la URL en la base de datos de Neon
+      await this.prisma.cursoEmpleado.update({
+        where: { cursoId_usuarioId: { cursoId, usuarioId } },
+        data: { constancia: urlCloudinary }
+      });
 
-      // Logos inferiores
-      const sep = fs.readFileSync(join(rutaAssets, 'sep1.svg'), 'utf8');
-      SVGtoPDF(doc, sep, mm(59), mm(256), { width: mm(34), height: mm(8) });
-
-      const tecnm = fs.readFileSync(join(rutaAssets, 'tecnmlogo.svg'), 'utf8');
-      SVGtoPDF(doc, tecnm, mm(97), mm(255), { width: mm(18.11), height: mm(9.21) });
-
-      const sonora = fs.readFileSync(join(rutaAssets, 'sonoraoprlogo.svg'), 'utf8');
-      SVGtoPDF(doc, sonora, mm(120.5), mm(253.8), { width: mm(40.61), height: mm(10.21) });
-
-      // Logo Institución
-      doc.image(join(rutaAssets, 'logo.png'), (pageWidth - mm(80)) / 2, mm(12), { width: mm(80), height: mm(25) });
-    } catch (err : any) {
-      console.error("Error en assets:", err.message);
+      // 6. Finalmente, enviamos la URL como respuesta o redirigimos
+      res.status(201).json({ url: urlCloudinary });
+      return;
+        
+    } catch (error : any) {
+      console.error("LOG DEL ERROR REAL:", error.message || error);
+      if (res.headersSent) {
+        return;
+      }
+      // 2. IMPORTANTE: No envíes el objeto 'error' directamente en el .json()
+      res.status(500).json({ 
+        message: 'Error al subir a Cloudinary o guardar en DB', 
+        // Enviamos solo el mensaje, NO el objeto completo
+        detalle: error.message || "Error interno del servidor" 
+      });
+      return;
     }
-
-    // Textos
-    doc.fillColor('#000000');
-    doc.font('Helvetica').fontSize(14).text("El Instituto Tecnológico Superior de Cajeme", 0, mm(51), { align: 'center', width: pageWidth });
-    doc.text("otorga la presente", 0, mm(60), { align: 'center', width: pageWidth });
-    doc.text("a:", 0, mm(92), { align: 'center', width: pageWidth });
-
-    const nombreUsuario = `${inscripcion.usuario.nombres} ${inscripcion.usuario.apellidos}`.toUpperCase();
-    doc.font('Times-Bold').fontSize(32)
-       .text(nombreUsuario, 0, mm(108), { align: 'center', width: pageWidth });
-
-    // DESCRIPCIÓN
-    doc.font('Helvetica').fontSize(14);
-    doc.text("Por su destacada participación en el Curso de capacitación interno", 0, mm(123), { align: 'center', width: pageWidth });
-    doc.text("realizado el 13 de Marzo del 2025, en las instalaciones de esta casa de estudios,", 0, mm(129), { align: 'center', width: pageWidth });
-    doc.text("donde presentó la capacitación del curso:", 0, mm(135), { align: 'center', width: pageWidth });
-
-    // NOMBRE CURSO (y: 148mm)
-    doc.font('Helvetica-Bold').fontSize(14)
-       .text(`“${inscripcion.curso.nombre}”`, 0, mm(148), { align: 'center', width: pageWidth });
-
-    // RECONOCEMOS...
-    doc.font('Helvetica').fontSize(14)
-       .text("Reconocemos su dedicación, determinación y compromiso con la", 0, mm(161), { align: 'center', width: pageWidth });
-    doc.text("finalización del curso establecido por la institución.", 0, mm(168), { align: 'center', width: pageWidth });
-
-    // FIRMAS
-    doc.fontSize(15).text("Lic. Margarita Vélez de la Rocha", 0, mm(213), { align: 'center', width: pageWidth });
-    doc.fontSize(12).text("Directora General", 0, mm(220), { align: 'center', width: pageWidth });
-
-    // CIUDAD Y FECHA
-    doc.fontSize(14).text("Cd. Obregón, Sonora, a Marzo de 2025", 0, mm(245), { align: 'center', width: pageWidth });
-
-    doc.end();
   }
 }

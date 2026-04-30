@@ -20,29 +20,35 @@ export class CloudinaryService {
   cloudinary.config(config);
   }
   
-  async uploadFile(file: Express.Multer.File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const upload = cloudinary.uploader.upload_stream(
-        { 
-          folder: 'constancias_itesca', 
-          resource_type: 'raw',
-          format: 'pdf',
-          access_mode: 'public',
-          use_filename: true,
-          unique_filename: true,
-          type: 'upload',
-        },
-        (error: UploadApiErrorResponse, result: UploadApiResponse) => {
-          if (error) return reject(error);
-          if (!result) {
-            return reject(new BadRequestException('Error al subir archivo a Cloudinary'));
-          }
+  async uploadFile(
+    file: Express.Multer.File,
+    publicId?: string,
+  ): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const upload = cloudinary.uploader.upload_stream(
+      {
+        folder: 'constancias_itesca',
+        resource_type: 'raw',
+        format: 'pdf',
 
-          resolve(result.secure_url);
-        },
-      );
-      
-      toStream(file.buffer).pipe(upload);
-    });
-  }
+        public_id: publicId,       // 🔥 NOMBRE REAL
+        overwrite: true,           // 🔥 evita duplicados
+        unique_filename: false,    // 🔥 IMPORTANTE
+        use_filename: false,       // 🔥 IMPORTANTE
+      },
+      (error: UploadApiErrorResponse, result: UploadApiResponse) => {
+        if (error) {
+          return reject(new Error(error.message || 'Error desconocido en Cloudinary'));
+        }
+        if (!result) {
+          return reject(new Error('No se recibió respuesta de Cloudinary'));
+        }
+
+        resolve(result.secure_url);
+      },
+    );
+
+    toStream(file.buffer).pipe(upload);
+  });
+}
 }
