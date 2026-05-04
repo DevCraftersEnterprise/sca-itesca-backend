@@ -44,19 +44,28 @@ export class InstructoresController {
       estado
     );
   }
-
-
-
-  // Patch para calificar: APROBADO o REPROBADO
+  // 3. Calificar a un alumno (APROBADO o REPROBADO)
   @Patch('calificar')
   @Roles(Role.INSTRUCTOR)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async calificar(
-    @Body() data: { cursoId: number, usuarioId: number, calificacion: 'APROBADO' | 'REPROBADO' }
+    @Body('id') id: number,
+    @Body('cursoId') cursoId: number,
+    @Body('usuarioId') usuarioId: number,
+    @Body('calificacion') calificacion: 'APROBADO' | 'REPROBADO'
   ) {
-    return this.instructoresService.asignarCalificacion(data.cursoId, data.usuarioId, data.calificacion);
+    return this.instructoresService.asignarCalificacion(
+      cursoId, 
+      usuarioId,
+      calificacion, 
+      id
+    );
   }
 
+
+
+
+  
   // 2. Obtener la lista de enlaces de todas las constancias de los alumnos aprobados
   @Get('curso/:id/constancias-alumnos')
   @Roles(Role.INSTRUCTOR)

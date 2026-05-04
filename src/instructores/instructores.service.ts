@@ -43,7 +43,7 @@ export class InstructoresService {
       skipDuplicates: true,
     });
   }
-
+  // 2. Actualizar asistencia de un día específico
   async actualizarAsistencia(id: number, cursoId: number, usuarioId: number, estado: 'ASISTENCIA' | 'JUSTIFICADA' | 'FALTA') {
     const asistencia = await this.prisma.asistencia.findFirst({
       where: {
@@ -60,26 +60,26 @@ export class InstructoresService {
       data: { estado }
     });
   }
-
-
-
-
-  // ASIGNAR CALIFICACIÓN (APROBADO / REPROBADO)
-  async asignarCalificacion(cursoId: number, usuarioId: number, calificacion: 'APROBADO' | 'REPROBADO') {
-    return this.prisma.cursoEmpleado.update({
-      where: {
-        cursoId_usuarioId: { 
-          cursoId: cursoId, 
-          usuarioId: usuarioId 
-        }
+  // 3. Calificar a un alumno (APROBADO o REPROBADO)
+  async asignarCalificacion(cursoId: number, usuarioId: number, calificacion: 'APROBADO' | 'REPROBADO', id: number) {
+    const inscripcion = await this.prisma.cursoEmpleado.findUnique({
+      where: { 
+        id,
+        cursoId, 
+        usuarioId 
       },
-      data: {
-        calificacion: calificacion,
-        estado: calificacion === 'APROBADO' ? 'VALIDADO' : 'POR_VALIDAR'
-      }
+    });
+    if (!inscripcion) {
+      throw new NotFoundException('No se encontró la inscripción del alumno en el curso');
+    }
+    return this.prisma.cursoEmpleado.update({
+      where: { id: id },
+      data: { calificacion: calificacion }
     });
   }
 
+
+  
   // 2. Obtener todos los PDFs aprobados (para descarga masiva)
   async obtenerTodasLasConstancias(cursoId: number) {
     const aprobados = await this.prisma.cursoEmpleado.findMany({
