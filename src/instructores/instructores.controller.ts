@@ -27,7 +27,23 @@ export class InstructoresController {
     );
   }
 
-
+  // 2. Actualizar asistencia de un día específico
+  @Patch('asistencia')
+  @Roles(Role.INSTRUCTOR)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async actualizarAsistencia(
+    @Body('id') id: number,
+    @Body('cursoId') cursoId: number,
+    @Body('usuarioId') usuarioId: number,
+    @Body('estado') estado: 'ASISTENCIA' | 'JUSTIFICADA' | 'FALTA'
+  ) {
+    return this.instructoresService.actualizarAsistencia(
+      id,
+      cursoId,
+      usuarioId,
+      estado
+    );
+  }
 
 
 

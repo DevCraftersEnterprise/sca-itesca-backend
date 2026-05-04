@@ -44,6 +44,22 @@ export class InstructoresService {
     });
   }
 
+  async actualizarAsistencia(id: number, cursoId: number, usuarioId: number, estado: 'ASISTENCIA' | 'JUSTIFICADA' | 'FALTA') {
+    const asistencia = await this.prisma.asistencia.findFirst({
+      where: {
+        cursoId,
+        usuarioId,
+        id
+      }
+    });
+    if (!asistencia) {
+      throw new NotFoundException('No se encontró la asistencia para este día');
+    }
+    return this.prisma.asistencia.update({
+      where: { id: id },
+      data: { estado }
+    });
+  }
 
 
 
