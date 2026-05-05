@@ -250,12 +250,17 @@ export class InstructoresService {
       } as Express.Multer.File;
 
       const urlCloudinary = await this.cloudinaryService.uploadFile(fileMock, nombreArchivo);
-
-      await this.prisma.cursoEmpleado.update({
-        where: { cursoId_usuarioId: { cursoId, usuarioId } },
-        data: { constancia: urlCloudinary }
-      });
-
+      if (tipo === 'reconocimiento') {
+        await this.prisma.curso.update({
+          where: { id: cursoId },
+          data: { reconocimiento: urlCloudinary }
+        });
+      } else {
+        await this.prisma.cursoEmpleado.update({
+          where: { cursoId_usuarioId: { cursoId, usuarioId } },
+          data: { constancia: urlCloudinary }
+        });
+      }
       res.status(201).json({ url: urlCloudinary });
       return;
         
