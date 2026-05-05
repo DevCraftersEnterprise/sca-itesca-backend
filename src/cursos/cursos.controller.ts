@@ -78,5 +78,17 @@ export class CursosController {
   update(@Param('id') id: string, @Body() updateCursoDto: UpdateCursoDto) {
     return this.cursosService.update(+id, updateCursoDto);
   }
+
+  // 7. Validar documento de constancia (Solo ADMIN)
+  @Patch('validar-documento')
+  @Roles(Role.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  async validarDocumento(
+    @Body('usuarioId') usuarioId: number,
+    @Body('cursoId') cursoId: number,
+    @Body('valido') valido: boolean
+  ) {
+    return this.cursosService.validarDocumento(usuarioId, cursoId, valido);
+  }
   
 }

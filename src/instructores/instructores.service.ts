@@ -258,7 +258,10 @@ export class InstructoresService {
       } else {
         await this.prisma.cursoEmpleado.update({
           where: { cursoId_usuarioId: { cursoId, usuarioId } },
-          data: { constancia: urlCloudinary }
+          data: { 
+            constancia: urlCloudinary,
+            fechaSubida: new Date(),
+           }
         });
       }
       res.status(201).json({ url: urlCloudinary });

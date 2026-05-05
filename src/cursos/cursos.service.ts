@@ -190,7 +190,26 @@ export class CursosService {
       }
     });
   }
-  // 7. Tarea programada para actualizar estados de cursos
+  // 7. Validar o rechazar constancia (Solo ADMIN)
+  async validarDocumento(usuarioId: number, cursoId: number, valido: boolean) {
+    const inscripcion = await this.prisma.cursoEmpleado.findFirst({
+      where: {
+        usuarioId: usuarioId,
+        cursoId: cursoId
+      }
+    });
+    if (!inscripcion) {
+      throw new BadRequestException('No se encontró la inscripción');
+    }
+    return this.prisma.cursoEmpleado.update({
+      where: { id: inscripcion.id },
+      data: {
+        estado: valido ? 'VALIDADO' : 'NO_VALIDADO',
+        fechaSubida: new Date(),
+      }
+    });
+  }
+  // 8. Tarea programada para actualizar estados de cursos
   @Cron(CronExpression.EVERY_HOUR) 
   async handleCron() {
     const ahora = new Date();
