@@ -26,7 +26,6 @@ export class InstructoresController {
       fecha
     );
   }
-
   // 2. Actualizar asistencia de un día específico
   @Patch('asistencia')
   @Roles(Role.INSTRUCTOR)
@@ -61,48 +60,23 @@ export class InstructoresController {
       id
     );
   }
-
-
-
-
-  
-  // 2. Obtener la lista de enlaces de todas las constancias de los alumnos aprobados
-  @Get('curso/:id/constancias-alumnos')
-  @Roles(Role.INSTRUCTOR)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async obtenerConstanciasAlumnos(@Param('id') id: string) {
-    return this.instructoresService.obtenerTodasLasConstancias(+id);
-  }
-  @Get('curso/:id/reporte-asistencia')
-  @Roles(Role.INSTRUCTOR)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async descargarReporte(@Param('id') id: string) {
-    return this.instructoresService.reporteAsistencia(+id);
-  }
-  
+  // 3. Generar constancia PDF para un alumno específico
   @Get(':cursoId/:usuarioId')
   @Roles(Role.INSTRUCTOR)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   async generarConstancia(
     @Param('cursoId', ParseIntPipe) cursoId: number,
     @Param('usuarioId', ParseIntPipe) usuarioId: number,
+    @Body('tipo') tipo: 'reconocimiento' | 'constancia',
     @Res({ passthrough: true }) res: express.Response,
   ) {
     return this.instructoresService.generarConstanciaPDF(
       cursoId,
       usuarioId,
       res,
+      tipo
     );
   }
 
-  @Get('descargar-constancia/:cursoId/:usuarioId')
-  @Roles(Role.INSTRUCTOR)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  async descargar(
-    @Param('cursoId') cursoId: string,
-    @Param('usuarioId') usuarioId: string,
-    @Res() res: express.Response
-  ) {
-    return this.instructoresService.generarConstanciaPDF(+cursoId, +usuarioId, res);
-  }
+
 }
